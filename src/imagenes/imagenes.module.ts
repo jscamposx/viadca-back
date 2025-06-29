@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ImagenesController } from './imagenes.controller';
@@ -9,6 +8,6 @@ import { Imagen } from './entidades/imagen.entity';
   imports: [TypeOrmModule.forFeature([Imagen])],
   controllers: [ImagenesController],
   providers: [ImagenesService],
-  exports: [ImagenesService], 
+  exports: [ImagenesService],
 })
 export class ImagenesModule {}

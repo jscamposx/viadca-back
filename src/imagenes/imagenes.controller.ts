@@ -1,4 +1,15 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Body, Get, Param, Res, NotFoundException, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  Body,
+  Get,
+  Param,
+  Res,
+  NotFoundException,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImagenesService } from './imagenes.service';
 import { CreateImagenDto } from './dto/create-imagen.dto';
@@ -9,7 +20,6 @@ import { Response } from 'express';
 export class ImagenesController {
   constructor(private readonly imagenesService: ImagenesService) {}
 
-  
   @Post()
   @UseInterceptors(FileInterceptor('imagen'))
   async create(
@@ -26,15 +36,12 @@ export class ImagenesController {
   }
 
   @Get()
-test() {
-  return { mensaje: 'Controlador imagenes funciona' };
-}   
+  test() {
+    return { mensaje: 'Controlador imagenes funciona' };
+  }
 
   @Get(':id')
-  async getImagen(
-    @Param('id', ParseIntPipe) id: number,
-    @Res() res: Response,
-  ) {
+  async getImagen(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     const imagen = await this.imagenesService.findOne(id);
 
     if (!imagen) {

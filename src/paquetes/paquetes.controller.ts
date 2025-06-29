@@ -5,7 +5,6 @@ import {
   Body,
   Param,
   NotFoundException,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { PaquetesService } from './paquetes.service';
 import { Paquetes } from './entidades/paquetes.entity';
@@ -20,11 +19,20 @@ export class PaquetesController {
     return this.paquetesService.findAll();
   }
 
-  @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Paquetes> {
-    const paquete = await this.paquetesService.findOne(id);
+  @Get(':identificador')
+  async findOne(
+    @Param('identificador') identificador: string,
+  ): Promise<Paquetes> {
+    let paquete: Paquetes | null = null;
+    if (/^\d+$/.test(identificador)) {
+      paquete = await this.paquetesService.findOne(parseInt(identificador, 10));
+    } else {
+      paquete = await this.paquetesService.findByUrl(identificador);
+    }
     if (!paquete) {
-      throw new NotFoundException(`Paquete con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Paquete con identificador "${identificador}" no encontrado`,
+      );
     }
     return paquete;
   }

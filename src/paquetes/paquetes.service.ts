@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Paquetes } from './entidades/paquetes.entity';
 import { CreatePaqueteDto } from './dto/create-paquete.dto';
+import { generarCodigoUnico } from '../utils/generar-url.util';
 
 @Injectable()
 export class PaquetesService {
@@ -22,14 +23,28 @@ export class PaquetesService {
     });
   }
 
-  private generateUrl(nombreDestino: string): string {
-    const slug = nombreDestino.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const uniqueSuffix = Date.now();
-    return `${slug}-${uniqueSuffix}`;
+  private async generarUrlUnica(): Promise<string> {
+    let intento = 0;
+    let url = '';
+    let existe: Paquetes | null = null;
+
+    do {
+      url = generarCodigoUnico(5);
+      existe = await this.paquetesRepository.findOne({ where: { url } });
+      intento++;
+    } while (existe && intento < 10);
+
+    if (existe) {
+      throw new Error(
+        'No se pudo generar una URL única después de varios intentos',
+      );
+    }
+
+    return url;
   }
 
   async create(createPaqueteDto: CreatePaqueteDto): Promise<Paquetes> {
-    const url = this.generateUrl(createPaqueteDto.nombre_destino);
+    const url = await this.generarUrlUnica();
 
     const nuevo = this.paquetesRepository.create({
       ...createPaqueteDto,
@@ -37,5 +52,12 @@ export class PaquetesService {
     });
 
     return this.paquetesRepository.save(nuevo);
+  }
+
+  async findByUrl(url: string): Promise<Paquetes | null> {
+    return this.paquetesRepository.findOne({
+      where: { url },
+      relations: ['itinerario'],
+    });
   }
 }

@@ -25,7 +25,6 @@ export class ImagenesService {
   }
 
   async findOne(id: number) {
-  return this.imagenesRepository.findOneBy({ id });
-}
-
+    return this.imagenesRepository.findOneBy({ id });
+  }
 }

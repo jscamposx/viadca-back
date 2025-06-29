@@ -1,4 +1,3 @@
-
 import { IsEnum, IsInt, IsOptional, IsPositive } from 'class-validator';
 
 export class CreateImagenDto {

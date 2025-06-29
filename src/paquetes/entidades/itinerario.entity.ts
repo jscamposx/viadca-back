@@ -12,8 +12,8 @@ export class Itinerario {
   @Column('text')
   descripcion: string;
 
-  @ManyToOne(() => Paquetes, paquete => paquete.itinerario, {
-    onDelete: 'CASCADE', 
+  @ManyToOne(() => Paquetes, (paquete) => paquete.itinerario, {
+    onDelete: 'CASCADE',
   })
   paquete: Paquetes;
 }

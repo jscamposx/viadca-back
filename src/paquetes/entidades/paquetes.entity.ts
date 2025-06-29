@@ -43,8 +43,8 @@ export class Paquetes {
   precio_base: number;
 
   @OneToMany(() => Itinerario, (itinerario) => itinerario.paquete, {
-    cascade: true, 
-    eager: true,  
+    cascade: true,
+    eager: true,
   })
   itinerario: Itinerario[];
 }

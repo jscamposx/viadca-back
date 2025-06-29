@@ -15,11 +15,15 @@ export class Imagen {
   imagen: Buffer;
 
   @Column()
-  mime_type: string; 
+  mime_type: string;
 
   @Column({ default: 0 })
   orden: number;
 
-  @Column({ type: 'enum', enum: ['carrusel', 'galeria', 'mapa'], default: 'carrusel' })
+  @Column({
+    type: 'enum',
+    enum: ['carrusel', 'galeria', 'mapa'],
+    default: 'carrusel',
+  })
   tipo: 'carrusel' | 'galeria' | 'mapa';
 }
