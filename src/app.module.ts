@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaquetesModule } from './paquetes/paquetes.module';
+import { ImagenesModule } from './imagenes/imagenes.module';
 
 
 @Module({
@@ -15,7 +16,8 @@ import { PaquetesModule } from './paquetes/paquetes.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,          
     }),
-    PaquetesModule,              
+    PaquetesModule,  
+    ImagenesModule,            
   ],
 })
 export class AppModule {}

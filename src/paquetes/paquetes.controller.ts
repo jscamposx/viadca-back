@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, NotFoundException } from '@nestjs/common';
 import { PaquetesService } from './paquetes.service';
-import { Paquetes } from './paquetes.entity';
+import { Paquetes } from '../entidades/paquetes.entity';
 
 @Controller('paquetes')
 export class PaquetesController {
