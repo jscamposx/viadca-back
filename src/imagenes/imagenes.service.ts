@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Imagen } from '../entidades/imagen.entity';
+import { Imagen } from './entidades/imagen.entity';
 
 interface CreateImagenInput {
   entidad_tipo: 'paquete' | 'vuelo' | 'hotel';

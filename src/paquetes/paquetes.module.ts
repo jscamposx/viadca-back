@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaquetesService } from './paquetes.service';
 import { PaquetesController } from './paquetes.controller';
-import { Paquetes } from '../entidades/paquetes.entity';
+import { Paquetes } from './entidades/paquetes.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Paquetes])],
