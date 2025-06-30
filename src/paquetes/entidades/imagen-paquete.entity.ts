@@ -18,6 +18,8 @@ export class ImagenPaquete {
   @Column({ default: 0 })
   orden: number;
 
-  @ManyToOne(() => Paquetes, (paquete) => paquete.imagenes)
+  @ManyToOne(() => Paquetes, (paquete) => paquete.imagenes, {
+    onDelete: 'CASCADE',
+  })
   paquete: Paquetes;
 }

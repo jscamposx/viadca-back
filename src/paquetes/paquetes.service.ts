@@ -26,7 +26,7 @@ export class PaquetesService {
   async findOne(id: number): Promise<Paquetes> {
     const paquete = await this.paquetesRepository.findOne({
       where: { id },
-      relations: ['itinerario'],
+      relations: ['itinerario', 'imagenes'],
     });
     if (!paquete) {
       throw new NotFoundException(`Paquete con id "${id}" no encontrado`);
@@ -64,22 +64,35 @@ export class PaquetesService {
 
     return this.paquetesRepository.save(nuevoPaquete);
   }
-
-  async update(id: number, updatePaqueteDto: UpdatePaqueteDto) {
-    const paquete = await this.paquetesRepository.preload({
-      id: id,
-      ...updatePaqueteDto,
-    });
+  
+  async updateByUrl(url: string, updatePaqueteDto: UpdatePaqueteDto) {
+    const paquete = await this.findByUrl(url);
     if (!paquete) {
-      throw new NotFoundException(`Paquete con id "${id}" no encontrado`);
+      throw new NotFoundException(`Paquete con url "${url}" no encontrado`);
     }
-    return this.paquetesRepository.save(paquete);
+    const paqueteActualizado = this.paquetesRepository.merge(
+      paquete,
+      updatePaqueteDto,
+    );
+    return this.paquetesRepository.save(paqueteActualizado);
   }
 
-  async remove(id: number) {
-    const paquete = await this.findOne(id);
+ 
+  async removeByUrl(url: string) {
+    const paquete = await this.findByUrl(url);
+    if (!paquete) {
+      throw new NotFoundException(`Paquete con url "${url}" no encontrado`);
+    }
+
+
+    const rutaDirectorio = path.join(process.cwd(), 'public', 'images', paquete.url);
+    if (fs.existsSync(rutaDirectorio)) {
+      fs.rmSync(rutaDirectorio, { recursive: true, force: true });
+    }
+    
+
     await this.paquetesRepository.remove(paquete);
-    return { message: `Paquete con id "${id}" eliminado` };
+    return { message: `Paquete con url "${url}" y sus archivos han sido eliminados.` };
   }
 
   async findByUrl(url: string): Promise<Paquetes | null> {
@@ -93,7 +106,7 @@ export class PaquetesService {
   }
 
   async findImageById(id: number): Promise<ImagenPaquete> {
-    const imagen = await this.imagenRepository.findOne({ where: { id } });
+    const imagen = await this.imagenRepository.findOne({ where: { id }, relations: ['paquete'] });
     if (!imagen) {
       throw new NotFoundException(`Imagen con id "${id}" no encontrada`);
     }
@@ -111,14 +124,27 @@ export class PaquetesService {
     return this.imagenRepository.save(imagen);
   }
 
+ 
   async removeImage(id: number) {
     const imagen = await this.findImageById(id);
     const rutaArchivo = path.join(process.cwd(), 'public', imagen.url);
 
+
     if (fs.existsSync(rutaArchivo)) {
       fs.unlinkSync(rutaArchivo);
     }
+    
     await this.imagenRepository.remove(imagen);
+
+
+    if (imagen.paquete) {
+        const rutaDirectorio = path.join(process.cwd(), 'public', 'images', imagen.paquete.url);
+        const archivosRestantes = fs.readdirSync(rutaDirectorio);
+        if (archivosRestantes.length === 0) {
+            fs.rmdirSync(rutaDirectorio);
+        }
+    }
+    
     return { message: `Imagen con id "${id}" eliminada` };
   }
 }

@@ -59,14 +59,17 @@ export class PaquetesController {
     return this.paquetesService.create(createPaqueteDto);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePaqueteDto: UpdatePaqueteDto) {
-    return this.paquetesService.update(+id, updatePaqueteDto);
+  @Patch(':url')
+  update(
+    @Param('url') url: string,
+    @Body() updatePaqueteDto: UpdatePaqueteDto,
+  ) {
+    return this.paquetesService.updateByUrl(url, updatePaqueteDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.paquetesService.remove(+id);
+  @Delete(':url')
+  remove(@Param('url') url: string) {
+    return this.paquetesService.removeByUrl(url);
   }
 
   @Post(':url/imagenes')
