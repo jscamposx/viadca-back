@@ -7,11 +7,11 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateItinerarioDto } from './create-itinerario.dto';
-
+import { CreateImagenDto } from './create-imagen.dto';
 export class CreatePaqueteDto {
   @IsString()
   @IsNotEmpty()
-  nombre_destino: string;
+  nombre_paquete: string;
 
   @IsNumber()
   duracion: number;
@@ -55,4 +55,9 @@ export class CreatePaqueteDto {
   @Type(() => CreateItinerarioDto)
   @IsOptional()
   itinerario?: CreateItinerarioDto[];
+
+  @ValidateNested({ each: true })
+  @Type(() => CreateImagenDto)
+  @IsOptional()
+  imagenes?: CreateImagenDto[];
 }

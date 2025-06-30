@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Itinerario } from './itinerario.entity';
+import { ImagenPaquete } from './imagen-paquete.entity';
 
 @Entity()
 export class Paquetes {
@@ -7,7 +8,7 @@ export class Paquetes {
   id: number;
 
   @Column({ length: 100 })
-  nombre_destino: string;
+  nombre_paquete: string;
 
   @Column({ unique: true, length: 255 })
   url: string;
@@ -47,4 +48,10 @@ export class Paquetes {
     eager: true,
   })
   itinerario: Itinerario[];
+
+  @OneToMany(() => ImagenPaquete, (imagen) => imagen.paquete, {
+    cascade: true,
+    eager: true,
+  })
+  imagenes: ImagenPaquete[];
 }

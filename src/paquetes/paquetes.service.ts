@@ -46,18 +46,21 @@ export class PaquetesService {
   async create(createPaqueteDto: CreatePaqueteDto): Promise<Paquetes> {
     const url = await this.generarUrlUnica();
 
-    const nuevo = this.paquetesRepository.create({
+    const nuevoPaquete = this.paquetesRepository.create({
       ...createPaqueteDto,
       url,
     });
 
-    return this.paquetesRepository.save(nuevo);
+    return this.paquetesRepository.save(nuevoPaquete);
   }
 
   async findByUrl(url: string): Promise<Paquetes | null> {
-    return this.paquetesRepository.findOne({
+    const paquete = await this.paquetesRepository.findOne({
       where: { url },
-      relations: ['itinerario'],
+      relations: ['itinerario', 'imagenes'],
+      order: { imagenes: { orden: 'ASC' } },
     });
+
+    return paquete;
   }
 }
