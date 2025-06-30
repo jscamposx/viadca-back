@@ -6,8 +6,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { CreateItinerarioDto } from './create-itinerario.dto';
-import { CreateImagenDto } from './create-imagen.dto';
+import { CreateItinerarioDto } from '../itinerario/create-itinerario.dto';
+import { CreateImagenDto } from '../imagen/create-imagen.dto';
 export class CreatePaqueteDto {
   @IsString()
   @IsNotEmpty()

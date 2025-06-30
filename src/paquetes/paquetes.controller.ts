@@ -3,7 +3,9 @@ import {
   Get,
   Post,
   Body,
+  Patch,
   Param,
+  Delete,
   NotFoundException,
   UseInterceptors,
   UploadedFiles,
@@ -11,13 +13,15 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PaquetesService } from './paquetes.service';
 import { Paquetes } from './entidades/paquetes.entity';
-import { CreatePaqueteDto } from './dto/create-paquete.dto';
+import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
+import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ImagenPaquete } from './entidades/imagen-paquete.entity';
 import { convertirAAvif } from '../utils/avif-converter.util';
 import * as fs from 'fs';
 import * as path from 'path';
+import { UpdateImagenDto } from './dto/imagen/update-imagen.dto';
 
 @Controller('paquetes')
 export class PaquetesController {
@@ -38,7 +42,7 @@ export class PaquetesController {
   ): Promise<Paquetes> {
     let paquete: Paquetes | null = null;
     if (/^\d+$/.test(identificador)) {
-      paquete = await this.paquetesService.findOne(parseInt(identificador, 10));
+      paquete = await this.paquetesService.findOne(+identificador);
     } else {
       paquete = await this.paquetesService.findByUrl(identificador);
     }
@@ -53,6 +57,16 @@ export class PaquetesController {
   @Post()
   create(@Body() createPaqueteDto: CreatePaqueteDto) {
     return this.paquetesService.create(createPaqueteDto);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updatePaqueteDto: UpdatePaqueteDto) {
+    return this.paquetesService.update(+id, updatePaqueteDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.paquetesService.remove(+id);
   }
 
   @Post(':url/imagenes')
@@ -106,5 +120,18 @@ export class PaquetesController {
     );
 
     return this.imagenRepo.save(imagenes);
+  }
+
+  @Patch(':url/imagenes/:id')
+  updateImage(
+    @Param('id') id: string,
+    @Body() updateImagenDto: UpdateImagenDto,
+  ) {
+    return this.paquetesService.updateImage(+id, updateImagenDto);
+  }
+
+  @Delete(':url/imagenes/:id')
+  removeImage(@Param('id') id: string) {
+    return this.paquetesService.removeImage(+id);
   }
 }
