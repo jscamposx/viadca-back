@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Paquetes } from './paquetes.entity';
+import { Paquetes } from './paquete.entity';
 
 @Entity()
 export class Itinerario {

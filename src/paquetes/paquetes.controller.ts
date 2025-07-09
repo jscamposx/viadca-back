@@ -12,12 +12,12 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PaquetesService } from './paquetes.service';
-import { Paquetes } from './entidades/paquetes.entity';
+import { Paquetes } from './entidades/paquete.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ImagenPaquete } from './entidades/imagen-paquete.entity';
+import { ImagenPaquete } from './entidades/imagen.entity';
 import { convertirAAvif } from '../utils/avif-converter.util';
 import * as fs from 'fs';
 import * as path from 'path';
