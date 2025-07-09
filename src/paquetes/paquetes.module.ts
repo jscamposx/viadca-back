@@ -1,12 +1,17 @@
+// src/paquetes/paquetes.module.ts
+
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaquetesService } from './paquetes.service';
 import { PaquetesController } from './paquetes.controller';
-import { Paquetes } from './entidades/paquete.entity';
-import { ImagenPaquete } from './entidades/imagen.entity';
+import { Paquete } from './entidades/paquete.entity'; // Corregido
+import { Imagen } from './entidades/imagen.entity';   // Corregido
+import { Hotel } from './entidades/hotel.entity';
+import { Itinerario } from './entidades/itinerario.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Paquetes, ImagenPaquete])],
+  // Asegúrate de incluir todas las entidades necesarias aquí
+  imports: [TypeOrmModule.forFeature([Paquete, Imagen, Hotel, Itinerario])], 
   controllers: [PaquetesController],
   providers: [PaquetesService],
 })
