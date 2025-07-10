@@ -23,7 +23,7 @@ export class Paquete {
   @Column('int')
   duracion: number;
 
-    @Column('text', { unique: true })
+  @Column('text', { unique: true })
   url: string;
 
   @Column('text', { nullable: true })
@@ -56,25 +56,22 @@ export class Paquete {
   @Column('int')
   precio_base: number;
 
-  // Relación con Itinerarios (asumiendo que la tienes)
   @OneToMany(() => Itinerario, (itinerario) => itinerario.paquete, {
     cascade: true,
     eager: true,
   })
   itinerario: Itinerario[];
 
-  // Relación con las imágenes generales del paquete
   @OneToMany(() => Imagen, (imagen) => imagen.paquete, {
     cascade: true,
     eager: true,
   })
   imagenes: Imagen[];
 
-  // Relación con el hotel (sea de Google o personalizado)
   @OneToOne(() => Hotel, (hotel) => hotel.paquete, {
     cascade: true,
     eager: true,
   })
-  @JoinColumn() // Paquete es el dueño de la relación y tendrá la columna hotelId
+  @JoinColumn()
   hotel: Hotel;
 }

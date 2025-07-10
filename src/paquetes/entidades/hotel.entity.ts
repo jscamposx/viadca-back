@@ -1,5 +1,3 @@
-// src/paquetes/entities/hotel.entity.ts
-
 import {
   Column,
   Entity,
@@ -15,7 +13,6 @@ export class Hotel {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  // ID que viene de Google Places API o uno custom (ej: "custom-1752017487445")
   @Column('text', { unique: true })
   placeId: string;
 
@@ -31,14 +28,12 @@ export class Hotel {
   @Column('int', { nullable: true })
   total_calificaciones?: number;
 
-  // Relación con las imágenes (solo si es un hotel personalizado)
   @OneToMany(() => Imagen, (imagen) => imagen.hotel, {
     cascade: true,
-    eager: true, // Cargar las imágenes automáticamente
+    eager: true,
   })
   imagenes?: Imagen[];
 
-  // Un hotel pertenece a un solo paquete
   @OneToOne(() => Paquete, (paquete) => paquete.hotel)
   paquete: Paquete;
 }

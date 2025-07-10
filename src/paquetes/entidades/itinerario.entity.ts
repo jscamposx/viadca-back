@@ -1,7 +1,5 @@
-// src/paquetes/entidades/itinerario.entity.ts
-
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
-import { Paquete } from './paquete.entity'; // Corrected import
+import { Paquete } from './paquete.entity';
 
 @Entity()
 export class Itinerario {
@@ -14,7 +12,7 @@ export class Itinerario {
   @Column('text')
   descripcion: string;
 
-  @ManyToOne(() => Paquete, (paquete) => paquete.itinerario, { // Corrected type
+  @ManyToOne(() => Paquete, (paquete) => paquete.itinerario, {
     onDelete: 'CASCADE',
   })
   paquete: Paquete;

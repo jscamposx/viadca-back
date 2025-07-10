@@ -42,7 +42,6 @@ export class PaquetesController {
   async findOne(
     @Param('identificador') identificador: string,
   ): Promise<Paquete> {
-    // ... (el código de este método se mantiene igual)
     let paquete: Paquete | null = null;
     if (/^\d+$/.test(identificador)) {
       paquete = await this.paquetesService.findOneById(identificador);
@@ -57,11 +56,8 @@ export class PaquetesController {
     return paquete;
   }
 
-  // --- AÑADE ESTE MÉTODO ---
   @Post()
   create(@Body() createPaqueteDto: CreatePaqueteDto) {
     return this.paquetesService.create(createPaqueteDto);
   }
-  
-  //... aquí van los otros métodos que ya tenías (PATCH, DELETE, etc.)
 }
