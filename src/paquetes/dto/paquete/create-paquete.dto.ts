@@ -107,7 +107,7 @@ export class CreatePaqueteDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ImagenDto)
-  imagenes: ImagenDto[]; // Imágenes generales del paquete
+  images: ImagenDto[]; // Imágenes generales del paquete
 
   @IsObject()
   @ValidateNested()

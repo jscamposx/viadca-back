@@ -29,24 +29,25 @@ import { UpdateImagenDto } from './dto/imagen/update-imagen.dto';
 export class PaquetesController {
   constructor(
     private readonly paquetesService: PaquetesService,
-    @InjectRepository(Imagen) // Corrected type
+    @InjectRepository(Imagen)
     private readonly imagenRepo: Repository<Imagen>,
   ) {}
 
   @Get()
-  findAll(): Promise<Paquete[]> { // Corrected type
+  findAll(): Promise<Paquete[]> {
     return this.paquetesService.findAll();
   }
 
   @Get(':identificador')
   async findOne(
     @Param('identificador') identificador: string,
-  ): Promise<Paquete> { // Corrected type
+  ): Promise<Paquete> {
+    // ... (el código de este método se mantiene igual)
     let paquete: Paquete | null = null;
     if (/^\d+$/.test(identificador)) {
-      paquete = await this.paquetesService.findOneById(identificador); // Corrected method call
+      paquete = await this.paquetesService.findOneById(identificador);
     } else {
-      paquete = await this.paquetesService.findOneByUrl(identificador); // Corrected method call
+      paquete = await this.paquetesService.findOneByUrl(identificador);
     }
     if (!paquete) {
       throw new NotFoundException(
@@ -55,5 +56,12 @@ export class PaquetesController {
     }
     return paquete;
   }
-  //... other methods
+
+  // --- AÑADE ESTE MÉTODO ---
+  @Post()
+  create(@Body() createPaqueteDto: CreatePaqueteDto) {
+    return this.paquetesService.create(createPaqueteDto);
+  }
+  
+  //... aquí van los otros métodos que ya tenías (PATCH, DELETE, etc.)
 }

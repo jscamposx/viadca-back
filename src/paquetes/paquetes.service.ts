@@ -1,3 +1,4 @@
+// src/paquetes/paquetes.service.ts
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -47,14 +48,14 @@ export class PaquetesService {
    * Utiliza una transacción para garantizar la integridad de los datos.
    */
   async create(createPaqueteDto: CreatePaqueteDto): Promise<Paquete> {
-    const { imagenes, hotel, itinerario, ...paqueteDetails } = createPaqueteDto;
+    const { images, hotel, itinerario, ...paqueteDetails } = createPaqueteDto;
     const url = await this.generarUrlUnica();
 
     const paquete = this.paqueteRepository.create({
       ...paqueteDetails,
       url,
       itinerario: itinerario, // Asume que el DTO y la entidad coinciden
-      imagenes: imagenes.map(imgDto => this.imagenRepository.create({ url: imgDto.url })),
+      imagenes: images.map(imgDto => this.imagenRepository.create({ url: imgDto.url })),
       hotel: this.hotelRepository.create({
         placeId: hotel.id,
         nombre: hotel.nombre,
@@ -119,7 +120,7 @@ export class PaquetesService {
    * Actualiza un paquete. Reemplaza las imágenes y el hotel existentes.
    */
   async update(id: string, updatePaqueteDto: UpdatePaqueteDto): Promise<Paquete> {
-    const { imagenes, hotel, itinerario, ...paqueteDetails } = updatePaqueteDto;
+    const { images, hotel, itinerario, ...paqueteDetails } = updatePaqueteDto;
 
     const paquete = await this.paqueteRepository.findOne({
         where: { id },
@@ -136,7 +137,7 @@ export class PaquetesService {
 
     try {
       // 1. Borrar relaciones antiguas si se proporcionan nuevas en el DTO
-      if (imagenes) {
+      if (images) {
         await queryRunner.manager.delete(Imagen, { paquete: { id } });
       }
       if (hotel && paquete.hotel) {
@@ -151,8 +152,8 @@ export class PaquetesService {
       }
 
       // 3. Crear y asignar nuevas relaciones solo si existen en el DTO
-      if (imagenes) {
-        updatedPaquete.imagenes = imagenes.map(imgDto => this.imagenRepository.create({ url: imgDto.url }));
+      if (images) {
+        updatedPaquete.imagenes = images.map(imgDto => this.imagenRepository.create({ url: imgDto.url }));
       }
       if (hotel) {
         updatedPaquete.hotel = this.hotelRepository.create({
