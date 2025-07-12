@@ -11,6 +11,7 @@ import { Hotel } from './entidades/hotel.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { generarCodigoUnico } from '../utils/generar-url.util';
+import { ImageHandlerService } from '../utils/image-handler.service';
 
 @Injectable()
 export class PaquetesService {
@@ -22,6 +23,7 @@ export class PaquetesService {
     @InjectRepository(Imagen)
     private readonly imagenRepository: Repository<Imagen>,
     private readonly dataSource: DataSource,
+    private readonly imageHandlerService: ImageHandlerService, // Servicio inyectado
   ) {}
 
   private async generarUrlUnica(): Promise<string> {
@@ -47,23 +49,42 @@ export class PaquetesService {
     const { images, hotel, itinerario, ...paqueteDetails } = createPaqueteDto;
     const url = await this.generarUrlUnica();
 
+    // 1. Procesar y guardar imágenes del paquete
+    const processedPaqueteImages = await Promise.all(
+      images.map(async (imgDto) => {
+        const savedImage = await this.imageHandlerService.saveImageFromUrl(
+          imgDto.url,
+        );
+        return this.imagenRepository.create(savedImage);
+      }),
+    );
+
+    // 2. Procesar y guardar imágenes del hotel (si existen)
+    let processedHotelImages: Imagen[] = [];
+    if (hotel.images && hotel.images.length > 0) {
+      processedHotelImages = await Promise.all(
+        hotel.images.map(async (imgDto) => {
+          const savedImage = await this.imageHandlerService.saveImageFromUrl(
+            imgDto.url,
+          );
+          return this.imagenRepository.create(savedImage);
+        }),
+      );
+    }
+
+    // 3. Crear la entidad Paquete con las imágenes procesadas
     const paquete = this.paqueteRepository.create({
       ...paqueteDetails,
       url,
-      itinerario: itinerario,
-      imagenes: images.map((imgDto) =>
-        this.imagenRepository.create({ url: imgDto.url }),
-      ),
+      itinerario, // TypeORM se encargará de esto por la cascada
+      imagenes: processedPaqueteImages,
       hotel: this.hotelRepository.create({
         placeId: hotel.id,
         nombre: hotel.nombre,
         estrellas: hotel.estrellas,
         isCustom: hotel.isCustom,
         total_calificaciones: hotel.total_calificaciones,
-        imagenes:
-          hotel.images?.map((imgDto) =>
-            this.imagenRepository.create({ url: imgDto.url }),
-          ) || [],
+        imagenes: processedHotelImages,
       }),
     });
 
@@ -71,6 +92,7 @@ export class PaquetesService {
       await this.paqueteRepository.save(paquete);
       return paquete;
     } catch (error) {
+      // Aquí podrías agregar lógica para eliminar las imágenes guardadas si falla la transacción
       throw new InternalServerErrorException(
         `Error al crear el paquete: ${error.message}`,
       );
@@ -113,7 +135,7 @@ export class PaquetesService {
 
     const paquete = await this.paqueteRepository.findOne({
       where: { id },
-      relations: ['hotel', 'imagenes'],
+      relations: ['hotel', 'hotel.imagenes', 'imagenes', 'itinerario'],
     });
 
     if (!paquete) {
@@ -127,41 +149,52 @@ export class PaquetesService {
     await queryRunner.startTransaction();
 
     try {
+      // Eliminar imágenes antiguas si se proporcionan nuevas
       if (images) {
-        await queryRunner.manager.delete(Imagen, { paquete: { id } });
-      }
-      if (hotel && paquete.hotel) {
-        await queryRunner.manager.delete(Hotel, { id: paquete.hotel.id });
-      }
-
-      const updatedPaquete = this.paqueteRepository.merge(
-        paquete,
-        paqueteDetails,
-      );
-      if (itinerario) {
-        updatedPaquete.itinerario = itinerario as any;
-      }
-
-      if (images) {
-        updatedPaquete.imagenes = images.map((imgDto) =>
-          this.imagenRepository.create({ url: imgDto.url }),
+        await queryRunner.manager.remove(paquete.imagenes);
+        const newImages = await Promise.all(
+          images.map(async (imgDto) => {
+            const savedImage = await this.imageHandlerService.saveImageFromUrl(
+              imgDto.url,
+            );
+            return this.imagenRepository.create(savedImage);
+          }),
         );
+        paquete.imagenes = newImages;
       }
+
+      // Reemplazar hotel si se proporciona uno nuevo
       if (hotel) {
-        updatedPaquete.hotel = this.hotelRepository.create({
+        if (paquete.hotel) {
+          await queryRunner.manager.remove(paquete.hotel);
+        }
+        let hotelImages: Imagen[] = [];
+        if (hotel.images && hotel.images.length > 0) {
+          hotelImages = await Promise.all(
+            hotel.images.map(async (imgDto) => {
+              const savedImage =
+                await this.imageHandlerService.saveImageFromUrl(imgDto.url);
+              return this.imagenRepository.create(savedImage);
+            }),
+          );
+        }
+        paquete.hotel = this.hotelRepository.create({
+          ...hotel,
           placeId: hotel.id,
-          nombre: hotel.nombre,
-          estrellas: hotel.estrellas,
-          isCustom: hotel.isCustom,
-          total_calificaciones: hotel.total_calificaciones,
-          imagenes:
-            hotel.images?.map((imgDto) =>
-              this.imagenRepository.create({ url: imgDto.url }),
-            ) || [],
+          imagenes: hotelImages,
         });
       }
 
-      await queryRunner.manager.save(updatedPaquete);
+      // Actualizar itinerario
+      if (itinerario) {
+        await queryRunner.manager.remove(paquete.itinerario);
+        paquete.itinerario = itinerario as any;
+      }
+
+      // Actualizar detalles del paquete
+      queryRunner.manager.merge(Paquete, paquete, paqueteDetails);
+      
+      await queryRunner.manager.save(Paquete, paquete);
 
       await queryRunner.commitTransaction();
       return this.findOneById(id);
@@ -177,6 +210,7 @@ export class PaquetesService {
 
   async remove(id: string): Promise<{ message: string }> {
     const paquete = await this.findOneById(id);
+    // La eliminación en cascada se encargará de las entidades relacionadas
     await this.paqueteRepository.remove(paquete);
     return {
       message: `Paquete con ID "${id}" y sus datos asociados han sido eliminados.`,
