@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { convertirAAvif } from './avif-converter.util';
+import * as sharp from 'sharp';
 
 @Injectable()
 export class ImageHandlerService {
@@ -31,8 +32,6 @@ export class ImageHandlerService {
         responseType: 'arraybuffer',
       });
 
-      // --- LA CORRECCIÓN CLAVE ESTÁ AQUÍ ---
-      // Se realiza un type assertion para tratar response.data como ArrayBuffer
       const buffer = Buffer.from(response.data as ArrayBuffer);
 
       return this.saveImage(buffer);
@@ -63,7 +62,17 @@ export class ImageHandlerService {
     buffer: Buffer,
   ): Promise<{ url: string; path: string }> {
     try {
-      const avifBuffer = await convertirAAvif(buffer);
+      // Redimensionar la imagen
+      const resizedBuffer = await sharp(buffer)
+        .resize({
+          width: 1920,
+          height: 1080,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .toBuffer();
+
+      const avifBuffer = await convertirAAvif(resizedBuffer);
       const filename = `${uuidv4()}.avif`;
       const filePath = path.join(this.uploadPath, filename);
       const fileUrl = `/uploads/${filename}`; // URL pública
