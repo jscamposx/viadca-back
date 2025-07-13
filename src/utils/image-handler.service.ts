@@ -1,32 +1,11 @@
-// src/utils/image-handler.service.ts
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios from 'axios';
-import * as fs from 'fs';
 import * as path from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import { convertirAAvif } from './avif-converter.util';
-import * as sharp from 'sharp';
+import { Worker } from 'worker_threads';
 
 @Injectable()
 export class ImageHandlerService {
-  private readonly uploadPath = path.join(
-    __dirname,
-    '..',
-    '..',
-    'public',
-    'uploads',
-  );
-
-  constructor() {
-    // Asegurarse de que el directorio de subida exista
-    if (!fs.existsSync(this.uploadPath)) {
-      fs.mkdirSync(this.uploadPath, { recursive: true });
-    }
-  }
-
-  async saveImageFromUrl(
-    imageUrl: string,
-  ): Promise<{ url: string; path: string }> {
+  async saveImageFromUrl(imageUrl: string): Promise<{ url: string }> {
     try {
       const response = await axios.get(imageUrl, {
         responseType: 'arraybuffer',
@@ -34,7 +13,7 @@ export class ImageHandlerService {
 
       const buffer = Buffer.from(response.data as ArrayBuffer);
 
-      return this.saveImage(buffer);
+      return this.processImageInWorker(buffer);
     } catch (error) {
       console.error(`Error al descargar la imagen desde ${imageUrl}:`, error);
       throw new InternalServerErrorException(
@@ -43,13 +22,11 @@ export class ImageHandlerService {
     }
   }
 
-  async saveImageFromBase64(
-    base64Data: string,
-  ): Promise<{ url: string; path: string }> {
+  async saveImageFromBase64(base64Data: string): Promise<{ url: string }> {
     try {
       const base64Payload = base64Data.split(';base64,').pop() || base64Data;
       const buffer = Buffer.from(base64Payload, 'base64');
-      return this.saveImage(buffer);
+      return this.processImageInWorker(buffer);
     } catch (error) {
       console.error('Error al procesar la imagen en Base64:', error);
       throw new InternalServerErrorException(
@@ -58,33 +35,31 @@ export class ImageHandlerService {
     }
   }
 
-  private async saveImage(
-    buffer: Buffer,
-  ): Promise<{ url: string; path: string }> {
-    try {
-      // Redimensionar la imagen
-      const resizedBuffer = await sharp(buffer)
-        .resize({
-          width: 1920,
-          height: 1080,
-          fit: 'inside',
-          withoutEnlargement: true,
-        })
-        .toBuffer();
+  private processImageInWorker(buffer: Buffer): Promise<{ url: string }> {
+    return new Promise((resolve, reject) => {
+      const worker = new Worker(path.join(__dirname, 'image-worker.js'), {
+        workerData: { buffer },
+      });
 
-      const avifBuffer = await convertirAAvif(resizedBuffer);
-      const filename = `${uuidv4()}.avif`;
-      const filePath = path.join(this.uploadPath, filename);
-      const fileUrl = `/uploads/${filename}`; // URL pública
+      worker.on('message', (result) => {
+        if (result.status === 'done') {
+          resolve({ url: result.url });
+        } else {
+          reject(new InternalServerErrorException(result.message));
+        }
+      });
 
-      fs.writeFileSync(filePath, avifBuffer);
+      worker.on('error', reject);
 
-      return { url: fileUrl, path: filePath };
-    } catch (error) {
-      console.error('Error al guardar o convertir la imagen:', error);
-      throw new InternalServerErrorException(
-        'Error interno al guardar la imagen.',
-      );
-    }
+      worker.on('exit', (code) => {
+        if (code !== 0) {
+          reject(
+            new InternalServerErrorException(
+              `El worker se detuvo con el código de salida ${code}`,
+            ),
+          );
+        }
+      });
+    });
   }
 }

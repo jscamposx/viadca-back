@@ -1,5 +1,3 @@
-// src/paquetes/entities/paquete.entity.ts
-
 import {
   Column,
   Entity,
@@ -8,7 +6,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Itinerario } from './itinerario.entity'; // Asegúrate de tener esta entidad
+import { Itinerario } from './itinerario.entity';
 import { Imagen } from './imagen.entity';
 import { Hotel } from './hotel.entity';
 
