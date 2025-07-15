@@ -10,6 +10,9 @@ export class Imagen {
   @Column('text')
   url: string;
 
+  @Column({ type: 'int', nullable: true })
+  orden: number;
+
   @ManyToOne(() => Paquete, (paquete) => paquete.imagenes, {
     nullable: true,
     onDelete: 'CASCADE',

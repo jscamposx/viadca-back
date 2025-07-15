@@ -5,6 +5,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsNumber,
+    IsDate,
   IsObject,
   IsOptional,
   IsString,
@@ -24,6 +25,10 @@ class ImagenDto {
   @IsString()
   @IsNotEmpty()
   url: string;
+
+  @IsInt()
+  @IsOptional()
+  orden?: number;
 }
 
 class HotelDto {
@@ -89,8 +94,17 @@ export class CreatePaqueteDto {
   @IsString()
   destino_place_id: string;
 
-  @IsInt()
+   @IsInt()
   precio_base: number;
+
+  @IsInt()
+  @IsOptional()
+  descuento?: number;
+
+  @Type(() => Date)
+  @IsDate()
+  @IsOptional()
+  fecha_caducidad?: Date;
 
   @IsArray()
   @ValidateNested({ each: true })
