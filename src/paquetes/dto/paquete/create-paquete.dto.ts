@@ -5,7 +5,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsNumber,
-    IsDate,
+  IsDate,
   IsObject,
   IsOptional,
   IsString,
@@ -94,7 +94,7 @@ export class CreatePaqueteDto {
   @IsString()
   destino_place_id: string;
 
-   @IsInt()
+  @IsInt()
   precio_base: number;
 
   @IsInt()

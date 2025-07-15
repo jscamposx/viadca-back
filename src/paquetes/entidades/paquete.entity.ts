@@ -1,7 +1,7 @@
 import {
   Column,
   UpdateDateColumn,
-   CreateDateColumn,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   OneToMany,
@@ -56,7 +56,7 @@ export class Paquete {
   @Column('int')
   precio_base: number;
 
-@Column({ type: 'int', nullable: true })
+  @Column({ type: 'int', nullable: true })
   descuento?: number;
 
   @Column({ type: 'date', nullable: true })
@@ -70,7 +70,6 @@ export class Paquete {
 
   @UpdateDateColumn({ type: 'timestamp' })
   actualizadoEn: Date;
-
 
   @OneToMany(() => Itinerario, (itinerario) => itinerario.paquete, {
     cascade: true,
