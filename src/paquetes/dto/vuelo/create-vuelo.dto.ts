@@ -8,7 +8,6 @@ import {
   ValidateNested,
 } from 'class-validator';
 
-// DTO para la data de la imagen
 class ImagenDto {
   @IsString()
   @IsNotEmpty()
@@ -28,7 +27,7 @@ export class CreateVueloDto {
   @IsNotEmpty()
   nombre: string;
 
-  // Aceptar un arreglo de imágenes
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ImagenDto)

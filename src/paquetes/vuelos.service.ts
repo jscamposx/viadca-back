@@ -11,19 +11,19 @@ export class VuelosService {
   constructor(
     @InjectRepository(Vuelo)
     private readonly vueloRepository: Repository<Vuelo>,
-    @InjectRepository(Imagen) // Inyectar el repositorio de Imagen
+    @InjectRepository(Imagen)
     private readonly imagenRepository: Repository<Imagen>,
   ) {}
 
   findAll(): Promise<Vuelo[]> {
-    // Asegurarse de cargar la relación de imágenes
+
     return this.vueloRepository.find({ relations: ['imagenes'] });
   }
 
   async findOne(id: string): Promise<Vuelo> {
     const vuelo = await this.vueloRepository.findOne({
       where: { id },
-      relations: ['imagenes'], // Cargar la relación
+      relations: ['imagenes'], 
     });
     if (!vuelo) {
       throw new NotFoundException(`Vuelo con ID "${id}" no encontrado`);
@@ -54,12 +54,12 @@ export class VuelosService {
     }
 
     if (imagenes) {
-      // Eliminar las imágenes antiguas asociadas a este vuelo
+ 
       const imagenesAnteriores = await this.imagenRepository.find({ where: { vuelo: { id } } });
       if (imagenesAnteriores.length > 0) {
         await this.imagenRepository.remove(imagenesAnteriores);
       }
-      // Crear las nuevas imágenes
+     
       vuelo.imagenes = imagenes.map((imgDto) => this.imagenRepository.create(imgDto));
     }
 

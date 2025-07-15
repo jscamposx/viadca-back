@@ -12,7 +12,7 @@ import {
 import { Itinerario } from './itinerario.entity';
 import { Imagen } from './imagen.entity';
 import { Hotel } from './hotel.entity';
-import { Vuelo } from './vuelo.entity'; // Importar Vuelo
+import { Vuelo } from './vuelo.entity'; 
 
 @Entity({ name: 'paquetes' })
 export class Paquete {

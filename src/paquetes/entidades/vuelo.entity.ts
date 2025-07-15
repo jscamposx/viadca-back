@@ -2,11 +2,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany, // Importar OneToMany
+  OneToMany, 
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Imagen } from './imagen.entity'; // Importar Imagen
+import { Imagen } from './imagen.entity'; 
 
 @Entity({ name: 'vuelos' })
 export class Vuelo {
@@ -18,8 +18,7 @@ export class Vuelo {
 
   @Column('text')
   nombre: string;
-  
-  // Se elimina la columna 'imagen' y se reemplaza por la relación
+ 
   @OneToMany(() => Imagen, (imagen) => imagen.vuelo, {
     cascade: true,
     eager: true,

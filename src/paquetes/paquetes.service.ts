@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, DeepPartial } from 'typeorm'; // Importar DeepPartial
+import { DataSource, Repository, DeepPartial } from 'typeorm'; 
 import { Paquete } from './entidades/paquete.entity';
 import { Imagen } from './entidades/imagen.entity';
 import { Hotel } from './entidades/hotel.entity';
@@ -12,6 +12,8 @@ import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { generarCodigoUnico } from '../utils/generar-url.util';
 import { Vuelo } from './entidades/vuelo.entity';
+import * as ExcelJS from 'exceljs';
+
 
 @Injectable()
 export class PaquetesService {
@@ -50,7 +52,6 @@ export class PaquetesService {
     const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } = createPaqueteDto;
     const url = await this.generarUrlUnica();
 
-    // Se crea un objeto base para el paquete
     const paqueteData: DeepPartial<Paquete> = {
       ...paqueteDetails,
       url,
@@ -66,7 +67,7 @@ export class PaquetesService {
       }),
     };
 
-    // Si se proporciona un id_vuelo, se busca y se asigna al paquete
+
     if (id_vuelo) {
       const vuelo = await this.vueloRepository.findOne({ where: { id: id_vuelo } });
       if (!vuelo) {
@@ -117,7 +118,7 @@ export class PaquetesService {
   async update(id: string, updatePaqueteDto: UpdatePaqueteDto): Promise<Paquete> {
     const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } = updatePaqueteDto;
     
-    // Usamos preload para cargar la entidad y aplicar los cambios del DTO
+
     const paquete = await this.paqueteRepository.preload({
         id: id,
         ...paqueteDetails
@@ -127,7 +128,7 @@ export class PaquetesService {
       throw new NotFoundException(`Paquete con ID "${id}" no encontrado para actualizar`);
     }
 
-    // Si se proporciona un id_vuelo, se busca y se asigna al paquete
+  
     if (id_vuelo !== undefined) {
         if (id_vuelo === null) {
             paquete.vuelo = undefined;
@@ -166,7 +167,7 @@ export class PaquetesService {
       }
 
       if (itinerario) {
-        // Aquí deberías manejar la lógica para actualizar o reemplazar el itinerario
+     
         paquete.itinerario = itinerario as any;
       }
 
@@ -189,5 +190,55 @@ export class PaquetesService {
     return {
       message: `Paquete con ID "${id}" ha sido marcado como eliminado.`,
     };
+  }
+
+
+   async exportToExcel(id: string): Promise<Buffer> {
+    const paquete = await this.findOneById(id);
+    if (!paquete) {
+      throw new NotFoundException(`Paquete con ID "${id}" no encontrado`);
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Paquete');
+
+
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 38 },
+      { header: 'Nombre del Paquete', key: 'nombre_paquete', width: 30 },
+      { header: 'Duración (días)', key: 'duracion', width: 15 },
+      { header: 'Origen', key: 'origen', width: 20 },
+      { header: 'Destino', key: 'destino', width: 20 },
+      { header: 'Precio Base', key: 'precio_base', width: 15, style: { numFmt: '"$"#,##0.00' } },
+      { header: 'Hotel', key: 'hotel', width: 30 },
+      { header: 'Vuelo', key: 'vuelo', width: 30 },
+    ];
+
+  
+    worksheet.addRow({
+      id: paquete.id,
+      nombre_paquete: paquete.nombre_paquete,
+      duracion: paquete.duracion,
+      origen: paquete.origen,
+      destino: paquete.destino,
+      precio_base: paquete.precio_base,
+      hotel: paquete.hotel ? paquete.hotel.nombre : 'N/A',
+      vuelo: paquete.vuelo ? paquete.vuelo.nombre : 'N/A',
+    });
+
+    // Agregar el itinerario si existe
+    if (paquete.itinerario && paquete.itinerario.length > 0) {
+      worksheet.addRow([]);
+      const itinerarioHeader = worksheet.addRow(['Itinerario']);
+      itinerarioHeader.font = { bold: true };
+      worksheet.addRow(['Día', 'Descripción']);
+      paquete.itinerario.forEach(item => {
+        worksheet.addRow([item.dia, item.descripcion]);
+      });
+    }
+
+    // Escribir el libro de trabajo en un buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer as Buffer;
   }
 }
