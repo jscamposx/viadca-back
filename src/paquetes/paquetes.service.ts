@@ -4,9 +4,9 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, DeepPartial } from 'typeorm';
+import { DataSource, Repository, DeepPartial, In } from 'typeorm';
 import { Paquete } from './entidades/paquete.entity';
-import { Imagen } from './entidades/imagen.entity';
+import { Imagen } from '../imagen/entidades/imagen.entity'; // Asegúrate que la ruta sea correcta
 import { Hotel } from './entidades/hotel.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
@@ -22,11 +22,139 @@ export class PaquetesService {
     @InjectRepository(Hotel)
     private readonly hotelRepository: Repository<Hotel>,
     @InjectRepository(Imagen)
-    private readonly imagenRepository: Repository<Imagen>,
+    private readonly imagenRepository: Repository<Imagen>, // Correctamente inyectado
     @InjectRepository(Vuelo)
     private readonly vueloRepository: Repository<Vuelo>,
     private readonly dataSource: DataSource,
   ) {}
+
+  // --- El método create que ya habías ajustado ---
+  async create(createPaqueteDto: CreatePaqueteDto): Promise<Paquete> {
+    const { imageIds, hotel: hotelDto, itinerario, id_vuelo, ...paqueteDetails } = createPaqueteDto;
+    const url = await this.generarUrlUnica();
+
+    const imagenes = await this.imagenRepository.findBy({ id: In(imageIds || []) });
+    if (imageIds && imagenes.length !== imageIds.length) {
+      throw new NotFoundException('Una o más imágenes del paquete no fueron encontradas.');
+    }
+
+    const hotelImages = hotelDto.imageIds ? await this.imagenRepository.findBy({ id: In(hotelDto.imageIds) }) : [];
+    if (hotelDto.imageIds && hotelImages.length !== hotelDto.imageIds.length) {
+        throw new NotFoundException('Una o más imágenes del hotel no fueron encontradas.');
+    }
+
+    const paqueteData: DeepPartial<Paquete> = {
+      ...paqueteDetails,
+      url,
+      itinerario,
+      imagenes: imagenes,
+      hotel: this.hotelRepository.create({
+        placeId: hotelDto.id,
+        nombre: hotelDto.nombre,
+        estrellas: hotelDto.estrellas,
+        isCustom: hotelDto.isCustom,
+        total_calificaciones: hotelDto.total_calificaciones,
+        imagenes: hotelImages,
+      }),
+    };
+
+    if (id_vuelo) {
+      const vuelo = await this.vueloRepository.findOne({ where: { id: id_vuelo } });
+      if (!vuelo) {
+        throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
+      }
+      paqueteData.vuelo = vuelo;
+    }
+
+    const paquete = this.paqueteRepository.create(paqueteData);
+
+    try {
+      await this.paqueteRepository.save(paquete);
+      return this.findOneById(paquete.id);
+    } catch (error) {
+      throw new InternalServerErrorException(`Error al crear el paquete: ${error.message}`);
+    }
+  }
+
+  // --- El método update refactorizado ---
+  async update(id: string, updatePaqueteDto: UpdatePaqueteDto): Promise<Paquete> {
+    const { imageIds, hotel: hotelDto, itinerario, id_vuelo, ...paqueteDetails } = updatePaqueteDto;
+
+    const paquete = await this.paqueteRepository.findOne({
+      where: { id },
+      relations: ['hotel', 'hotel.imagenes', 'imagenes'],
+    });
+
+    if (!paquete) {
+      throw new NotFoundException(`Paquete con ID "${id}" no encontrado para actualizar`);
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // Actualizar imágenes del paquete
+      if (imageIds) {
+        const imagenes = await this.imagenRepository.findBy({ id: In(imageIds) });
+        if (imagenes.length !== imageIds.length) {
+          throw new NotFoundException('Una o más imágenes del paquete no fueron encontradas.');
+        }
+        paquete.imagenes = imagenes;
+      }
+
+      // Actualizar hotel y sus imágenes
+      if (hotelDto) {
+        const hotelImages = hotelDto.imageIds ? await this.imagenRepository.findBy({ id: In(hotelDto.imageIds) }) : [];
+         if (hotelDto.imageIds && hotelImages.length !== hotelDto.imageIds.length) {
+          throw new NotFoundException('Una o más imágenes del hotel no fueron encontradas.');
+        }
+
+        if (paquete.hotel) {
+            Object.assign(paquete.hotel, {
+                placeId: hotelDto.id,
+                nombre: hotelDto.nombre,
+                estrellas: hotelDto.estrellas,
+                isCustom: hotelDto.isCustom,
+                total_calificaciones: hotelDto.total_calificaciones,
+                imagenes: hotelImages,
+            });
+        }
+      }
+      
+      // Actualizar vuelo
+      if (id_vuelo !== undefined) {
+        if (id_vuelo === null) {
+          paquete.vuelo = undefined;
+        } else {
+          const vuelo = await this.vueloRepository.findOne({ where: { id: id_vuelo } });
+          if (!vuelo) {
+            throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
+          }
+          paquete.vuelo = vuelo;
+        }
+      }
+      
+      // Actualizar el resto de los detalles
+      Object.assign(paquete, paqueteDetails);
+      if (itinerario) {
+        paquete.itinerario = itinerario as any;
+      }
+
+      await queryRunner.manager.save(paquete);
+      await queryRunner.commitTransaction();
+      
+      return this.findOneById(id);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw new InternalServerErrorException(`Error al actualizar el paquete: ${error.message}`);
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  // --- El resto de tus métodos (findAll, findOneById, etc.) ---
+  // ... (No necesitan cambios)
 
   private async generarUrlUnica(): Promise<string> {
     let intento = 0;
@@ -45,50 +173,6 @@ export class PaquetesService {
       );
     }
     return url;
-  }
-
-  async create(createPaqueteDto: CreatePaqueteDto): Promise<Paquete> {
-    const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } =
-      createPaqueteDto;
-    const url = await this.generarUrlUnica();
-
-    const paqueteData: DeepPartial<Paquete> = {
-      ...paqueteDetails,
-      url,
-      itinerario,
-      imagenes: images.map((imgDto) => this.imagenRepository.create(imgDto)),
-      hotel: this.hotelRepository.create({
-        placeId: hotel.id,
-        nombre: hotel.nombre,
-        estrellas: hotel.estrellas,
-        isCustom: hotel.isCustom,
-        total_calificaciones: hotel.total_calificaciones,
-        imagenes:
-          hotel.images?.map((imgDto) => this.imagenRepository.create(imgDto)) ||
-          [],
-      }),
-    };
-
-    if (id_vuelo) {
-      const vuelo = await this.vueloRepository.findOne({
-        where: { id: id_vuelo },
-      });
-      if (!vuelo) {
-        throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
-      }
-      paqueteData.vuelo = vuelo;
-    }
-
-    const paquete = this.paqueteRepository.create(paqueteData);
-
-    try {
-      await this.paqueteRepository.save(paquete);
-      return paquete;
-    } catch (error) {
-      throw new InternalServerErrorException(
-        `Error al crear el paquete: ${error.message}`,
-      );
-    }
   }
 
   findAll(): Promise<Paquete[]> {
@@ -141,90 +225,6 @@ export class PaquetesService {
     return paquete;
   }
 
-  async update(
-    id: string,
-    updatePaqueteDto: UpdatePaqueteDto,
-  ): Promise<Paquete> {
-    const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } =
-      updatePaqueteDto;
-
-    const paquete = await this.paqueteRepository.preload({
-      id: id,
-      ...paqueteDetails,
-    });
-
-    if (!paquete) {
-      throw new NotFoundException(
-        `Paquete con ID "${id}" no encontrado para actualizar`,
-      );
-    }
-
-    if (id_vuelo !== undefined) {
-      if (id_vuelo === null) {
-        paquete.vuelo = undefined;
-      } else {
-        const vuelo = await this.vueloRepository.findOne({
-          where: { id: id_vuelo },
-        });
-        if (!vuelo) {
-          throw new NotFoundException(
-            `Vuelo con ID "${id_vuelo}" no encontrado`,
-          );
-        }
-        paquete.vuelo = vuelo;
-      }
-    }
-
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      if (images) {
-        await queryRunner.manager.delete(Imagen, { paquete: { id } });
-        paquete.imagenes = images.map((imgDto) =>
-          this.imagenRepository.create(imgDto),
-        );
-      }
-
-      if (hotel) {
-        if (paquete.hotel) {
-          await queryRunner.manager.delete(Imagen, {
-            hotel: { id: paquete.hotel.id },
-          });
-          await queryRunner.manager.delete(Hotel, { id: paquete.hotel.id });
-        }
-        paquete.hotel = this.hotelRepository.create({
-          placeId: hotel.id,
-          nombre: hotel.nombre,
-          estrellas: hotel.estrellas,
-          isCustom: hotel.isCustom,
-          total_calificaciones: hotel.total_calificaciones,
-          imagenes:
-            hotel.images?.map((imgDto) =>
-              this.imagenRepository.create(imgDto),
-            ) || [],
-        });
-      }
-
-      if (itinerario) {
-        paquete.itinerario = itinerario as any;
-      }
-
-      await queryRunner.manager.save(paquete);
-      await queryRunner.commitTransaction();
-
-      return this.findOneById(id);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(
-        `Error al actualizar el paquete: ${error.message}`,
-      );
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
   async remove(id: string): Promise<{ message: string }> {
     const paquete = await this.findOneById(id);
     paquete.borrado = true;
@@ -270,7 +270,6 @@ export class PaquetesService {
       vuelo: paquete.vuelo ? paquete.vuelo.nombre : 'N/A',
     });
 
-    // Agregar el itinerario si existe
     if (paquete.itinerario && paquete.itinerario.length > 0) {
       worksheet.addRow([]);
       const itinerarioHeader = worksheet.addRow(['Itinerario']);
@@ -281,7 +280,6 @@ export class PaquetesService {
       });
     }
 
-    // Escribir el libro de trabajo en un buffer
     const buffer = await workbook.xlsx.writeBuffer();
     return buffer as Buffer;
   }

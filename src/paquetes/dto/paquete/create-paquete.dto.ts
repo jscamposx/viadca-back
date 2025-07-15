@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
+  IsUUID,
 } from 'class-validator';
 
 class ItinerarioDto {
@@ -50,11 +51,11 @@ class HotelDto {
   @IsOptional()
   total_calificaciones?: number;
 
+  
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ImagenDto)
+  @IsUUID('all', { each: true })
   @IsOptional()
-  images?: ImagenDto[];
+  imageIds?: string[]; // Campo para los IDs de las imágenes del hotel
 }
 
 export class CreatePaqueteDto {
@@ -112,9 +113,8 @@ export class CreatePaqueteDto {
   itinerario: ItinerarioDto[];
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ImagenDto)
-  images: ImagenDto[];
+  @IsUUID('all', { each: true }) // Se espera un array de UUIDs
+  imageIds: string[]; // ¡Aquí está el cambio!
 
   @IsObject()
   @ValidateNested()

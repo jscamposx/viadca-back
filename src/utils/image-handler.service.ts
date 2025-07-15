@@ -34,6 +34,17 @@ export class ImageHandlerService {
       );
     }
   }
+  
+  async saveImageFromBuffer(buffer: Buffer): Promise<{ url: string }> {
+    try {
+      return this.processImageInWorker(buffer);
+    } catch (error) {
+      console.error('Error al procesar la imagen desde el buffer:', error);
+      throw new InternalServerErrorException(
+        'No se pudo procesar la imagen desde el buffer.',
+      );
+    }
+  }
 
   private processImageInWorker(buffer: Buffer): Promise<{ url: string }> {
     return new Promise((resolve, reject) => {

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaquetesModule } from './paquetes/paquetes.module';
+import { ImagenModule } from './imagen/imagen.module'; // Importamos el nuevo módulo
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { PaquetesModule } from './paquetes/paquetes.module';
       synchronize: true,
     }),
     PaquetesModule,
+    ImagenModule, // Lo añadimos aquí
   ],
 })
 export class AppModule {}
