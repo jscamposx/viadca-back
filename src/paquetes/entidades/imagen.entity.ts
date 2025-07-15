@@ -1,6 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Paquete } from './paquete.entity';
 import { Hotel } from './hotel.entity';
+import { Vuelo } from './vuelo.entity'; // Importar Vuelo
 
 @Entity({ name: 'imagenes' })
 export class Imagen {
@@ -24,4 +25,11 @@ export class Imagen {
     onDelete: 'CASCADE',
   })
   hotel?: Hotel;
+
+  // Nueva relación con Vuelo
+  @ManyToOne(() => Vuelo, (vuelo) => vuelo.imagenes, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  vuelo?: Vuelo;
 }

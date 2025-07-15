@@ -7,10 +7,12 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  ManyToOne,
 } from 'typeorm';
 import { Itinerario } from './itinerario.entity';
 import { Imagen } from './imagen.entity';
 import { Hotel } from './hotel.entity';
+import { Vuelo } from './vuelo.entity'; // Importar Vuelo
 
 @Entity({ name: 'paquetes' })
 export class Paquete {
@@ -26,8 +28,9 @@ export class Paquete {
   @Column('text', { unique: true })
   url: string;
 
-  @Column('text', { nullable: true })
-  id_vuelo?: string;
+  @ManyToOne(() => Vuelo, { eager: true, nullable: true })
+  @JoinColumn({ name: 'id_vuelo' })
+  vuelo?: Vuelo;
 
   @Column('text', { nullable: true })
   requisitos?: string;

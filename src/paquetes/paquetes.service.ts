@@ -4,14 +4,14 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, Repository, DeepPartial } from 'typeorm'; // Importar DeepPartial
 import { Paquete } from './entidades/paquete.entity';
 import { Imagen } from './entidades/imagen.entity';
 import { Hotel } from './entidades/hotel.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { generarCodigoUnico } from '../utils/generar-url.util';
-import * as ExcelJS from 'exceljs';
+import { Vuelo } from './entidades/vuelo.entity';
 
 @Injectable()
 export class PaquetesService {
@@ -22,6 +22,8 @@ export class PaquetesService {
     private readonly hotelRepository: Repository<Hotel>,
     @InjectRepository(Imagen)
     private readonly imagenRepository: Repository<Imagen>,
+    @InjectRepository(Vuelo)
+    private readonly vueloRepository: Repository<Vuelo>,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -45,54 +47,55 @@ export class PaquetesService {
   }
 
   async create(createPaqueteDto: CreatePaqueteDto): Promise<Paquete> {
-    const { images, hotel, itinerario, ...paqueteDetails } = createPaqueteDto;
+    const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } = createPaqueteDto;
     const url = await this.generarUrlUnica();
 
-    const paquete = this.paqueteRepository.create({
+    // Se crea un objeto base para el paquete
+    const paqueteData: DeepPartial<Paquete> = {
       ...paqueteDetails,
       url,
-      itinerario: itinerario,
-      imagenes: images.map((imgDto) =>
-        this.imagenRepository.create({ url: imgDto.url, orden: imgDto.orden }),
-      ),
+      itinerario,
+      imagenes: images.map((imgDto) => this.imagenRepository.create(imgDto)),
       hotel: this.hotelRepository.create({
         placeId: hotel.id,
         nombre: hotel.nombre,
         estrellas: hotel.estrellas,
         isCustom: hotel.isCustom,
         total_calificaciones: hotel.total_calificaciones,
-        imagenes:
-          hotel.images?.map((imgDto) =>
-            this.imagenRepository.create({
-              url: imgDto.url,
-              orden: imgDto.orden,
-            }),
-          ) || [],
+        imagenes: hotel.images?.map((imgDto) => this.imagenRepository.create(imgDto)) || [],
       }),
-    });
+    };
+
+    // Si se proporciona un id_vuelo, se busca y se asigna al paquete
+    if (id_vuelo) {
+      const vuelo = await this.vueloRepository.findOne({ where: { id: id_vuelo } });
+      if (!vuelo) {
+        throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
+      }
+      paqueteData.vuelo = vuelo;
+    }
+
+    const paquete = this.paqueteRepository.create(paqueteData);
 
     try {
       await this.paqueteRepository.save(paquete);
       return paquete;
     } catch (error) {
-      throw new InternalServerErrorException(
-        `Error al crear el paquete: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`Error al crear el paquete: ${error.message}`);
     }
   }
 
   findAll(): Promise<Paquete[]> {
     return this.paqueteRepository.find({
-      where: { borrado: false }, 
-      relations: ['itinerario', 'imagenes', 'hotel', 'hotel.imagenes'],
+      where: { borrado: false },
+      relations: ['itinerario', 'imagenes', 'hotel', 'hotel.imagenes', 'vuelo', 'vuelo.imagenes'],
     });
   }
-
 
   async findOneById(id: string): Promise<Paquete> {
     const paquete = await this.paqueteRepository.findOne({
       where: { id, borrado: false },
-      relations: ['itinerario', 'imagenes', 'hotel', 'hotel.imagenes'],
+      relations: ['itinerario', 'imagenes', 'hotel', 'hotel.imagenes', 'vuelo', 'vuelo.imagenes'],
     });
     if (!paquete) {
       throw new NotFoundException(`Paquete con ID "${id}" no encontrado`);
@@ -100,11 +103,10 @@ export class PaquetesService {
     return paquete;
   }
 
-
   async findOneByUrl(url: string): Promise<Paquete> {
     const paquete = await this.paqueteRepository.findOne({
-      where: { url, borrado: false }, 
-      relations: ['itinerario', 'imagenes', 'hotel', 'hotel.imagenes'],
+      where: { url, borrado: false },
+      relations: ['itinerario', 'imagenes', 'hotel', 'hotel.imagenes', 'vuelo', 'vuelo.imagenes'],
     });
     if (!paquete) {
       throw new NotFoundException(`Paquete con URL "${url}" no encontrado`);
@@ -112,21 +114,30 @@ export class PaquetesService {
     return paquete;
   }
 
-  async update(
-    id: string,
-    updatePaqueteDto: UpdatePaqueteDto,
-  ): Promise<Paquete> {
-    const { images, hotel, itinerario, ...paqueteDetails } = updatePaqueteDto;
-
-    const paquete = await this.paqueteRepository.findOne({
-      where: { id },
-      relations: ['hotel', 'imagenes'],
+  async update(id: string, updatePaqueteDto: UpdatePaqueteDto): Promise<Paquete> {
+    const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } = updatePaqueteDto;
+    
+    // Usamos preload para cargar la entidad y aplicar los cambios del DTO
+    const paquete = await this.paqueteRepository.preload({
+        id: id,
+        ...paqueteDetails
     });
 
     if (!paquete) {
-      throw new NotFoundException(
-        `Paquete con ID "${id}" no encontrado para actualizar`,
-      );
+      throw new NotFoundException(`Paquete con ID "${id}" no encontrado para actualizar`);
+    }
+
+    // Si se proporciona un id_vuelo, se busca y se asigna al paquete
+    if (id_vuelo !== undefined) {
+        if (id_vuelo === null) {
+            paquete.vuelo = undefined;
+        } else {
+            const vuelo = await this.vueloRepository.findOne({ where: { id: id_vuelo } });
+            if (!vuelo) {
+                throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
+            }
+            paquete.vuelo = vuelo;
+        }
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -136,60 +147,41 @@ export class PaquetesService {
     try {
       if (images) {
         await queryRunner.manager.delete(Imagen, { paquete: { id } });
-      }
-      if (hotel && paquete.hotel) {
-        await queryRunner.manager.delete(Imagen, {
-          hotel: { id: paquete.hotel.id },
-        });
-        await queryRunner.manager.delete(Hotel, { id: paquete.hotel.id });
+        paquete.imagenes = images.map((imgDto) => this.imagenRepository.create(imgDto));
       }
 
-      const updatedPaquete = this.paqueteRepository.merge(
-        paquete,
-        paqueteDetails,
-      );
-      if (itinerario) {
-        updatedPaquete.itinerario = itinerario as any;
-      }
-
-      if (images) {
-        updatedPaquete.imagenes = images.map((imgDto) =>
-          this.imagenRepository.create({
-            url: imgDto.url,
-            orden: imgDto.orden,
-          }),
-        );
-      }
       if (hotel) {
-        updatedPaquete.hotel = this.hotelRepository.create({
+        if (paquete.hotel) {
+            await queryRunner.manager.delete(Imagen, { hotel: { id: paquete.hotel.id } });
+            await queryRunner.manager.delete(Hotel, { id: paquete.hotel.id });
+        }
+        paquete.hotel = this.hotelRepository.create({
           placeId: hotel.id,
           nombre: hotel.nombre,
           estrellas: hotel.estrellas,
           isCustom: hotel.isCustom,
           total_calificaciones: hotel.total_calificaciones,
-          imagenes:
-            hotel.images?.map((imgDto) =>
-              this.imagenRepository.create({
-                url: imgDto.url,
-                orden: imgDto.orden,
-              }),
-            ) || [],
+          imagenes: hotel.images?.map((imgDto) => this.imagenRepository.create(imgDto)) || [],
         });
       }
 
-      await queryRunner.manager.save(updatedPaquete);
+      if (itinerario) {
+        // Aquí deberías manejar la lógica para actualizar o reemplazar el itinerario
+        paquete.itinerario = itinerario as any;
+      }
 
+      await queryRunner.manager.save(paquete);
       await queryRunner.commitTransaction();
+      
       return this.findOneById(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(
-        `Error al actualizar el paquete: ${error.message}`,
-      );
+      throw new InternalServerErrorException(`Error al actualizar el paquete: ${error.message}`);
     } finally {
       await queryRunner.release();
     }
   }
+
   async remove(id: string): Promise<{ message: string }> {
     const paquete = await this.findOneById(id);
     paquete.borrado = true;
@@ -197,46 +189,5 @@ export class PaquetesService {
     return {
       message: `Paquete con ID "${id}" ha sido marcado como eliminado.`,
     };
-  }
-
-
-
-   async exportToExcel(id: string): Promise<Buffer> {
-    const paquete = await this.findOneById(id);
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Paquete');
-
-    worksheet.columns = [
-      { header: 'ID', key: 'id', width: 38 },
-      { header: 'Nombre del Paquete', key: 'nombre_paquete', width: 30 },
-      { header: 'Duración (días)', key: 'duracion', width: 15 },
-      { header: 'Origen', key: 'origen', width: 20 },
-      { header: 'Destino', key: 'destino', width: 20 },
-      { header: 'Precio Base', key: 'precio_base', width: 15 },
-      { header: 'Descuento', key: 'descuento', width: 15 },
-      { header: 'Fecha de Caducidad', key: 'fecha_caducidad', width: 20 },
-    ];
-
-    worksheet.addRow({
-      id: paquete.id,
-      nombre_paquete: paquete.nombre_paquete,
-      duracion: paquete.duracion,
-      origen: paquete.origen,
-      destino: paquete.destino,
-      precio_base: paquete.precio_base,
-      descuento: paquete.descuento,
-      fecha_caducidad: paquete.fecha_caducidad,
-    });
-
-    // Agregando itinerario
-    worksheet.addRow({}); // Fila vacía para separar
-    worksheet.addRow(['Día', 'Descripción del Itinerario']);
-    paquete.itinerario.forEach(item => {
-      worksheet.addRow([item.dia, item.descripcion]);
-    });
-
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    return buffer as Buffer;
   }
 }
