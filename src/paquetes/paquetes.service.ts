@@ -11,6 +11,7 @@ import { Hotel } from './entidades/hotel.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { generarCodigoUnico } from '../utils/generar-url.util';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class PaquetesService {
@@ -196,5 +197,46 @@ export class PaquetesService {
     return {
       message: `Paquete con ID "${id}" ha sido marcado como eliminado.`,
     };
+  }
+
+
+
+   async exportToExcel(id: string): Promise<Buffer> {
+    const paquete = await this.findOneById(id);
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Paquete');
+
+    worksheet.columns = [
+      { header: 'ID', key: 'id', width: 38 },
+      { header: 'Nombre del Paquete', key: 'nombre_paquete', width: 30 },
+      { header: 'Duración (días)', key: 'duracion', width: 15 },
+      { header: 'Origen', key: 'origen', width: 20 },
+      { header: 'Destino', key: 'destino', width: 20 },
+      { header: 'Precio Base', key: 'precio_base', width: 15 },
+      { header: 'Descuento', key: 'descuento', width: 15 },
+      { header: 'Fecha de Caducidad', key: 'fecha_caducidad', width: 20 },
+    ];
+
+    worksheet.addRow({
+      id: paquete.id,
+      nombre_paquete: paquete.nombre_paquete,
+      duracion: paquete.duracion,
+      origen: paquete.origen,
+      destino: paquete.destino,
+      precio_base: paquete.precio_base,
+      descuento: paquete.descuento,
+      fecha_caducidad: paquete.fecha_caducidad,
+    });
+
+    // Agregando itinerario
+    worksheet.addRow({}); // Fila vacía para separar
+    worksheet.addRow(['Día', 'Descripción del Itinerario']);
+    paquete.itinerario.forEach(item => {
+      worksheet.addRow([item.dia, item.descripcion]);
+    });
+
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer as Buffer;
   }
 }

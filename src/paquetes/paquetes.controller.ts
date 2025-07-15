@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { PaquetesService } from './paquetes.service';
@@ -20,6 +21,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Imagen } from './entidades/imagen.entity';
 import { ImageHandlerService } from '../utils/image-handler.service';
+import { Response } from 'express';
 
 @Controller('paquetes')
 export class PaquetesController {
@@ -28,6 +30,20 @@ export class PaquetesController {
     private readonly imageHandlerService: ImageHandlerService,
   ) {}
 
+  @Get('export/excel/:id')
+  async exportToExcel(@Param('id') id: string, @Res() res: Response) {
+    const buffer = await this.paquetesService.exportToExcel(id);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=paquete-${id}.xlsx`,
+    );
+    res.send(buffer);
+  }
+  
   @Get()
   findAll(): Promise<Paquete[]> {
     return this.paquetesService.findAll();
@@ -57,7 +73,7 @@ export class PaquetesController {
     return paquete;
   }
 
-  @Post()
+ @Post()
   create(@Body() createPaqueteDto: CreatePaqueteDto) {
     return this.paquetesService.create(createPaqueteDto);
   }
