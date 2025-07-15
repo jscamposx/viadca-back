@@ -16,14 +16,13 @@ export class VuelosService {
   ) {}
 
   findAll(): Promise<Vuelo[]> {
-
     return this.vueloRepository.find({ relations: ['imagenes'] });
   }
 
   async findOne(id: string): Promise<Vuelo> {
     const vuelo = await this.vueloRepository.findOne({
       where: { id },
-      relations: ['imagenes'], 
+      relations: ['imagenes'],
     });
     if (!vuelo) {
       throw new NotFoundException(`Vuelo con ID "${id}" no encontrado`);
@@ -54,13 +53,16 @@ export class VuelosService {
     }
 
     if (imagenes) {
- 
-      const imagenesAnteriores = await this.imagenRepository.find({ where: { vuelo: { id } } });
+      const imagenesAnteriores = await this.imagenRepository.find({
+        where: { vuelo: { id } },
+      });
       if (imagenesAnteriores.length > 0) {
         await this.imagenRepository.remove(imagenesAnteriores);
       }
-     
-      vuelo.imagenes = imagenes.map((imgDto) => this.imagenRepository.create(imgDto));
+
+      vuelo.imagenes = imagenes.map((imgDto) =>
+        this.imagenRepository.create(imgDto),
+      );
     }
 
     return this.vueloRepository.save(vuelo);

@@ -2,11 +2,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany, 
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Imagen } from './imagen.entity'; 
+import { Imagen } from './imagen.entity';
 
 @Entity({ name: 'vuelos' })
 export class Vuelo {
@@ -18,7 +18,7 @@ export class Vuelo {
 
   @Column('text')
   nombre: string;
- 
+
   @OneToMany(() => Imagen, (imagen) => imagen.vuelo, {
     cascade: true,
     eager: true,

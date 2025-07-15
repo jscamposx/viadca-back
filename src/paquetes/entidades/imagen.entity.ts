@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Paquete } from './paquete.entity';
 import { Hotel } from './hotel.entity';
-import { Vuelo } from './vuelo.entity'; 
+import { Vuelo } from './vuelo.entity';
 
 @Entity({ name: 'imagenes' })
 export class Imagen {

@@ -43,7 +43,7 @@ export class PaquetesController {
     );
     res.send(buffer);
   }
-  
+
   @Get()
   findAll(): Promise<Paquete[]> {
     return this.paquetesService.findAll();
@@ -73,7 +73,7 @@ export class PaquetesController {
     return paquete;
   }
 
- @Post()
+  @Post()
   create(@Body() createPaqueteDto: CreatePaqueteDto) {
     return this.paquetesService.create(createPaqueteDto);
   }

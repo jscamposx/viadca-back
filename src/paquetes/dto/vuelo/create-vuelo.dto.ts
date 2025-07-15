@@ -27,7 +27,6 @@ export class CreateVueloDto {
   @IsNotEmpty()
   nombre: string;
 
-
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ImagenDto)

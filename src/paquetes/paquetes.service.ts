@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, DeepPartial } from 'typeorm'; 
+import { DataSource, Repository, DeepPartial } from 'typeorm';
 import { Paquete } from './entidades/paquete.entity';
 import { Imagen } from './entidades/imagen.entity';
 import { Hotel } from './entidades/hotel.entity';
@@ -13,7 +13,6 @@ import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { generarCodigoUnico } from '../utils/generar-url.util';
 import { Vuelo } from './entidades/vuelo.entity';
 import * as ExcelJS from 'exceljs';
-
 
 @Injectable()
 export class PaquetesService {
@@ -49,7 +48,8 @@ export class PaquetesService {
   }
 
   async create(createPaqueteDto: CreatePaqueteDto): Promise<Paquete> {
-    const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } = createPaqueteDto;
+    const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } =
+      createPaqueteDto;
     const url = await this.generarUrlUnica();
 
     const paqueteData: DeepPartial<Paquete> = {
@@ -63,13 +63,16 @@ export class PaquetesService {
         estrellas: hotel.estrellas,
         isCustom: hotel.isCustom,
         total_calificaciones: hotel.total_calificaciones,
-        imagenes: hotel.images?.map((imgDto) => this.imagenRepository.create(imgDto)) || [],
+        imagenes:
+          hotel.images?.map((imgDto) => this.imagenRepository.create(imgDto)) ||
+          [],
       }),
     };
 
-
     if (id_vuelo) {
-      const vuelo = await this.vueloRepository.findOne({ where: { id: id_vuelo } });
+      const vuelo = await this.vueloRepository.findOne({
+        where: { id: id_vuelo },
+      });
       if (!vuelo) {
         throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
       }
@@ -82,21 +85,37 @@ export class PaquetesService {
       await this.paqueteRepository.save(paquete);
       return paquete;
     } catch (error) {
-      throw new InternalServerErrorException(`Error al crear el paquete: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Error al crear el paquete: ${error.message}`,
+      );
     }
   }
 
   findAll(): Promise<Paquete[]> {
     return this.paqueteRepository.find({
       where: { borrado: false },
-      relations: ['itinerario', 'imagenes', 'hotel', 'hotel.imagenes', 'vuelo', 'vuelo.imagenes'],
+      relations: [
+        'itinerario',
+        'imagenes',
+        'hotel',
+        'hotel.imagenes',
+        'vuelo',
+        'vuelo.imagenes',
+      ],
     });
   }
 
   async findOneById(id: string): Promise<Paquete> {
     const paquete = await this.paqueteRepository.findOne({
       where: { id, borrado: false },
-      relations: ['itinerario', 'imagenes', 'hotel', 'hotel.imagenes', 'vuelo', 'vuelo.imagenes'],
+      relations: [
+        'itinerario',
+        'imagenes',
+        'hotel',
+        'hotel.imagenes',
+        'vuelo',
+        'vuelo.imagenes',
+      ],
     });
     if (!paquete) {
       throw new NotFoundException(`Paquete con ID "${id}" no encontrado`);
@@ -107,7 +126,14 @@ export class PaquetesService {
   async findOneByUrl(url: string): Promise<Paquete> {
     const paquete = await this.paqueteRepository.findOne({
       where: { url, borrado: false },
-      relations: ['itinerario', 'imagenes', 'hotel', 'hotel.imagenes', 'vuelo', 'vuelo.imagenes'],
+      relations: [
+        'itinerario',
+        'imagenes',
+        'hotel',
+        'hotel.imagenes',
+        'vuelo',
+        'vuelo.imagenes',
+      ],
     });
     if (!paquete) {
       throw new NotFoundException(`Paquete con URL "${url}" no encontrado`);
@@ -115,30 +141,38 @@ export class PaquetesService {
     return paquete;
   }
 
-  async update(id: string, updatePaqueteDto: UpdatePaqueteDto): Promise<Paquete> {
-    const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } = updatePaqueteDto;
-    
+  async update(
+    id: string,
+    updatePaqueteDto: UpdatePaqueteDto,
+  ): Promise<Paquete> {
+    const { images, hotel, itinerario, id_vuelo, ...paqueteDetails } =
+      updatePaqueteDto;
 
     const paquete = await this.paqueteRepository.preload({
-        id: id,
-        ...paqueteDetails
+      id: id,
+      ...paqueteDetails,
     });
 
     if (!paquete) {
-      throw new NotFoundException(`Paquete con ID "${id}" no encontrado para actualizar`);
+      throw new NotFoundException(
+        `Paquete con ID "${id}" no encontrado para actualizar`,
+      );
     }
 
-  
     if (id_vuelo !== undefined) {
-        if (id_vuelo === null) {
-            paquete.vuelo = undefined;
-        } else {
-            const vuelo = await this.vueloRepository.findOne({ where: { id: id_vuelo } });
-            if (!vuelo) {
-                throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
-            }
-            paquete.vuelo = vuelo;
+      if (id_vuelo === null) {
+        paquete.vuelo = undefined;
+      } else {
+        const vuelo = await this.vueloRepository.findOne({
+          where: { id: id_vuelo },
+        });
+        if (!vuelo) {
+          throw new NotFoundException(
+            `Vuelo con ID "${id_vuelo}" no encontrado`,
+          );
         }
+        paquete.vuelo = vuelo;
+      }
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -148,13 +182,17 @@ export class PaquetesService {
     try {
       if (images) {
         await queryRunner.manager.delete(Imagen, { paquete: { id } });
-        paquete.imagenes = images.map((imgDto) => this.imagenRepository.create(imgDto));
+        paquete.imagenes = images.map((imgDto) =>
+          this.imagenRepository.create(imgDto),
+        );
       }
 
       if (hotel) {
         if (paquete.hotel) {
-            await queryRunner.manager.delete(Imagen, { hotel: { id: paquete.hotel.id } });
-            await queryRunner.manager.delete(Hotel, { id: paquete.hotel.id });
+          await queryRunner.manager.delete(Imagen, {
+            hotel: { id: paquete.hotel.id },
+          });
+          await queryRunner.manager.delete(Hotel, { id: paquete.hotel.id });
         }
         paquete.hotel = this.hotelRepository.create({
           placeId: hotel.id,
@@ -162,22 +200,26 @@ export class PaquetesService {
           estrellas: hotel.estrellas,
           isCustom: hotel.isCustom,
           total_calificaciones: hotel.total_calificaciones,
-          imagenes: hotel.images?.map((imgDto) => this.imagenRepository.create(imgDto)) || [],
+          imagenes:
+            hotel.images?.map((imgDto) =>
+              this.imagenRepository.create(imgDto),
+            ) || [],
         });
       }
 
       if (itinerario) {
-     
         paquete.itinerario = itinerario as any;
       }
 
       await queryRunner.manager.save(paquete);
       await queryRunner.commitTransaction();
-      
+
       return this.findOneById(id);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      throw new InternalServerErrorException(`Error al actualizar el paquete: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Error al actualizar el paquete: ${error.message}`,
+      );
     } finally {
       await queryRunner.release();
     }
@@ -192,8 +234,7 @@ export class PaquetesService {
     };
   }
 
-
-   async exportToExcel(id: string): Promise<Buffer> {
+  async exportToExcel(id: string): Promise<Buffer> {
     const paquete = await this.findOneById(id);
     if (!paquete) {
       throw new NotFoundException(`Paquete con ID "${id}" no encontrado`);
@@ -202,19 +243,22 @@ export class PaquetesService {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Paquete');
 
-
     worksheet.columns = [
       { header: 'ID', key: 'id', width: 38 },
       { header: 'Nombre del Paquete', key: 'nombre_paquete', width: 30 },
       { header: 'Duración (días)', key: 'duracion', width: 15 },
       { header: 'Origen', key: 'origen', width: 20 },
       { header: 'Destino', key: 'destino', width: 20 },
-      { header: 'Precio Base', key: 'precio_base', width: 15, style: { numFmt: '"$"#,##0.00' } },
+      {
+        header: 'Precio Base',
+        key: 'precio_base',
+        width: 15,
+        style: { numFmt: '"$"#,##0.00' },
+      },
       { header: 'Hotel', key: 'hotel', width: 30 },
       { header: 'Vuelo', key: 'vuelo', width: 30 },
     ];
 
-  
     worksheet.addRow({
       id: paquete.id,
       nombre_paquete: paquete.nombre_paquete,
@@ -232,7 +276,7 @@ export class PaquetesService {
       const itinerarioHeader = worksheet.addRow(['Itinerario']);
       itinerarioHeader.font = { bold: true };
       worksheet.addRow(['Día', 'Descripción']);
-      paquete.itinerario.forEach(item => {
+      paquete.itinerario.forEach((item) => {
         worksheet.addRow([item.dia, item.descripcion]);
       });
     }
