@@ -6,7 +6,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { Imagen } from './imagen.entity';
+import { Imagen } from '../../imagen/entidades/imagen.entity'; // Asegúrate que la ruta sea correcta
+
 
 @Entity({ name: 'vuelos' })
 export class Vuelo {
