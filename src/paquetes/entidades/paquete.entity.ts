@@ -57,7 +57,7 @@ export class Paquete {
   @Column('text')
   destino_place_id: string;
 
-  @Column('int')
+  @Column('float')
   precio_base: number;
 
   @Column({ type: 'int', nullable: true })

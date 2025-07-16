@@ -19,6 +19,10 @@ export class Imagen {
   @Column({ type: 'int', nullable: true })
   orden: number;
 
+   @Column({ default: false })
+  es_externa: boolean;
+
+
   @ManyToOne(() => Paquete, (paquete) => paquete.imagenes, {
     nullable: true,
     onDelete: 'CASCADE',
