@@ -1,4 +1,3 @@
-// src/paquetes/paquetes.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaquetesService } from './paquetes.service';

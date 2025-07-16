@@ -1,5 +1,3 @@
-// src/imagen/imagen.service.ts
-
 import {
   Injectable,
   NotFoundException,
@@ -28,19 +26,14 @@ export class ImagenService {
     private readonly imageHandlerService: ImageHandlerService,
   ) {}
 
-  /**
-   * Método unificado para crear una imagen desde Base64 o URL.
-   */
   async create(createImagenDto: CreateImagenDto): Promise<Imagen> {
     const { image, url, paqueteId, hotelId, vueloId } = createImagenDto;
     const nuevaImagen = new Imagen();
 
     if (url) {
-      // Si es una URL, la guardamos directamente
       nuevaImagen.url = url;
       nuevaImagen.es_externa = true;
     } else if (image) {
-      // Si es Base64, la procesamos para guardarla localmente
       try {
         const processedImage =
           await this.imageHandlerService.saveImageFromBase64(image);
@@ -53,7 +46,6 @@ export class ImagenService {
       }
     }
 
-    // Lógica para asociar la imagen a otras entidades
     if (paqueteId) {
       const paquete = await this.paqueteRepository.findOne({
         where: { id: paqueteId },
@@ -64,6 +56,26 @@ export class ImagenService {
         );
       }
       nuevaImagen.paquete = paquete;
+    }
+
+    if (hotelId) {
+      const hotel = await this.hotelRepository.findOne({
+        where: { id: hotelId },
+      });
+      if (!hotel) {
+        throw new NotFoundException(`Hotel con ID "${hotelId}" no encontrado`);
+      }
+      nuevaImagen.hotel = hotel;
+    }
+
+    if (vueloId) {
+      const vuelo = await this.vueloRepository.findOne({
+        where: { id: vueloId },
+      });
+      if (!vuelo) {
+        throw new NotFoundException(`Vuelo con ID "${vueloId}" no encontrado`);
+      }
+      nuevaImagen.vuelo = vuelo;
     }
 
     return this.imagenRepository.save(nuevaImagen);

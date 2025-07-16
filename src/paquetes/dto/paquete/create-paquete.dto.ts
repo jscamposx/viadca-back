@@ -1,5 +1,3 @@
-// src/paquetes/dto/paquete/create-paquete.dto.ts - CÓDIGO CORREGIDO
-
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -23,11 +21,10 @@ class ItinerarioDto {
   descripcion: string;
 }
 
-// ✅ DTO de Hotel corregido y simplificado
 class HotelDto {
   @IsString()
   @IsNotEmpty()
-  placeId: string; // El único identificador que necesitamos
+  placeId: string;
 
   @IsString()
   @IsNotEmpty()
@@ -104,7 +101,7 @@ export class CreatePaqueteDto {
   itinerario: ItinerarioDto[];
 
   @IsArray()
-  @IsString({ each: true }) // Permite UUIDs y URLs
+  @IsString({ each: true })
   imageIds: string[];
 
   @IsObject()

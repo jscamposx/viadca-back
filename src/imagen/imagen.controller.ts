@@ -1,5 +1,3 @@
-// src/imagen/imagen.controller.ts
-
 import {
   Controller,
   Post,
@@ -17,9 +15,6 @@ import { CreateImagenDto } from './dto/create-imagen.dto';
 export class ImagenController {
   constructor(private readonly imagenService: ImagenService) {}
 
-  /**
-   * Endpoint unificado para subir una imagen desde Base64 o una URL.
-   */
   @Post('upload')
   create(@Body() createImagenDto: CreateImagenDto) {
     if (!createImagenDto.image && !createImagenDto.url) {
@@ -27,7 +22,7 @@ export class ImagenController {
         'Se debe proporcionar una imagen en formato Base64 o una URL.',
       );
     }
-    // Llama a un nuevo método unificado en el servicio
+
     return this.imagenService.create(createImagenDto);
   }
 
