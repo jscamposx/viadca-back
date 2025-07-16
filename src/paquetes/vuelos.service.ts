@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Vuelo } from './entidades/vuelo.entity';
 import { CreateVueloDto } from './dto/vuelo/create-vuelo.dto';
 import { UpdateVueloDto } from './dto/vuelo/update-vuelo.dto';
-import { Imagen } from '../imagen/entidades/imagen.entity'; 
+import { Imagen } from '../imagen/entidades/imagen.entity';
 
 @Injectable()
 export class VuelosService {

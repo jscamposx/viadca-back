@@ -1,5 +1,3 @@
-// src/paquetes/paquetes.service.ts
-
 import {
   Injectable,
   NotFoundException,
@@ -7,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository, DeepPartial, In } from 'typeorm';
-import { isUUID } from 'class-validator'; // Asegúrate que esta importación esté aquí
+import { isUUID } from 'class-validator';
 import { Paquete } from './entidades/paquete.entity';
 import { Imagen } from '../imagen/entidades/imagen.entity';
 import { Hotel } from './entidades/hotel.entity';
@@ -31,32 +29,40 @@ export class PaquetesService {
     private readonly dataSource: DataSource,
   ) {}
 
-  // --- MÉTODO CREATE REFACTORIZADO ---
   async create(createPaqueteDto: CreatePaqueteDto): Promise<Paquete> {
-    const { imageIds, hotel: hotelDto, itinerario, id_vuelo, ...paqueteDetails } = createPaqueteDto;
-    
-    // Procesamos las imágenes para el paquete y el hotel
-    const paqueteImagenes = await this.procesarIdentificadoresDeImagen(imageIds);
-    const hotelImagenes = await this.procesarIdentificadoresDeImagen(hotelDto?.imageIds);
+    const {
+      imageIds,
+      hotel: hotelDto,
+      itinerario,
+      id_vuelo,
+      ...paqueteDetails
+    } = createPaqueteDto;
 
-    // Creamos la entidad Hotel
+    const paqueteImagenes =
+      await this.procesarIdentificadoresDeImagen(imageIds);
+    const hotelImagenes = await this.procesarIdentificadoresDeImagen(
+      hotelDto?.imageIds,
+    );
+
     const hotel = this.hotelRepository.create({
       ...hotelDto,
       imagenes: hotelImagenes,
     });
-    
-    // Creamos la entidad Paquete
+
     const nuevoPaquete = this.paqueteRepository.create({
       ...paqueteDetails,
       url: await this.generarUrlUnica(),
       itinerario,
       imagenes: paqueteImagenes,
-      hotel, // Asignamos la entidad hotel completa
+      hotel,
     });
 
     if (id_vuelo) {
-      const vuelo = await this.vueloRepository.findOne({ where: { id: id_vuelo } });
-      if (!vuelo) throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
+      const vuelo = await this.vueloRepository.findOne({
+        where: { id: id_vuelo },
+      });
+      if (!vuelo)
+        throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
       nuevoPaquete.vuelo = vuelo;
     }
 
@@ -64,83 +70,89 @@ export class PaquetesService {
       const paqueteGuardado = await this.paqueteRepository.save(nuevoPaquete);
       return this.findOneById(paqueteGuardado.id);
     } catch (error) {
-      throw new InternalServerErrorException(`Error al crear el paquete: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Error al crear el paquete: ${error.message}`,
+      );
     }
   }
 
-  // --- MÉTODO UPDATE REFACTORIZADO ---
-  async update(id: string, updatePaqueteDto: UpdatePaqueteDto): Promise<Paquete> {
-    const paquete = await this.findOneById(id); // Cargamos el paquete con sus relaciones
-    const { imageIds, hotel: hotelDto, itinerario, id_vuelo, ...paqueteDetails } = updatePaqueteDto;
+  async update(
+    id: string,
+    updatePaqueteDto: UpdatePaqueteDto,
+  ): Promise<Paquete> {
+    const paquete = await this.findOneById(id);
+    const {
+      imageIds,
+      hotel: hotelDto,
+      itinerario,
+      id_vuelo,
+      ...paqueteDetails
+    } = updatePaqueteDto;
 
-    // Actualizamos los detalles simples
     Object.assign(paquete, paqueteDetails);
-    if(itinerario) paquete.itinerario = itinerario as any;
-    
-    // Actualizamos las imágenes del paquete si vienen en el DTO
+    if (itinerario) paquete.itinerario = itinerario as any;
+
     if (imageIds) {
       paquete.imagenes = await this.procesarIdentificadoresDeImagen(imageIds);
     }
 
-    // Actualizamos el hotel si viene en el DTO
     if (hotelDto) {
-      Object.assign(paquete.hotel, hotelDto); // Actualizamos los datos del hotel
+      Object.assign(paquete.hotel, hotelDto);
       if (hotelDto.imageIds) {
-        paquete.hotel.imagenes = await this.procesarIdentificadoresDeImagen(hotelDto.imageIds);
+        paquete.hotel.imagenes = await this.procesarIdentificadoresDeImagen(
+          hotelDto.imageIds,
+        );
       }
     }
-    
-    // Actualizamos el vuelo
+
     if (id_vuelo) {
-       const vuelo = await this.vueloRepository.findOne({ where: { id: id_vuelo } });
-       if (!vuelo) throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
-       paquete.vuelo = vuelo;
+      const vuelo = await this.vueloRepository.findOne({
+        where: { id: id_vuelo },
+      });
+      if (!vuelo)
+        throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
+      paquete.vuelo = vuelo;
     }
 
     try {
-        await this.paqueteRepository.save(paquete);
-        return this.findOneById(id);
+      await this.paqueteRepository.save(paquete);
+      return this.findOneById(id);
     } catch (error) {
-        throw new InternalServerErrorException(`Error al actualizar el paquete: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Error al actualizar el paquete: ${error.message}`,
+      );
     }
   }
 
-  // --- LÓGICA DE PROCESAMIENTO DE IMÁGENES (AHORA EN EL LUGAR CORRECTO) ---
   private async procesarIdentificadoresDeImagen(
     identificadores: string[] | undefined,
   ): Promise<Imagen[]> {
     if (!identificadores || identificadores.length === 0) {
       return [];
     }
-    
-    const imagenesFinales: Imagen[] = [];
-    const uuids = identificadores.filter(id => isUUID(id));
-    const urlsExternas = identificadores.filter(id => id.startsWith('http'));
 
-    // 1. Buscamos imágenes existentes por UUID
+    const imagenesFinales: Imagen[] = [];
+    const uuids = identificadores.filter((id) => isUUID(id));
+    const urlsExternas = identificadores.filter((id) => id.startsWith('http'));
+
     if (uuids.length > 0) {
-      const imagenesExistentes = await this.imagenRepository.findBy({ id: In(uuids) });
+      const imagenesExistentes = await this.imagenRepository.findBy({
+        id: In(uuids),
+      });
       imagenesFinales.push(...imagenesExistentes);
     }
 
-    // 2. Creamos nuevas entidades para las URLs externas
     for (const url of urlsExternas) {
-      // Verificamos si ya existe una imagen con esa URL para no duplicarla
       let imagen = await this.imagenRepository.findOne({ where: { url } });
       if (!imagen) {
         imagen = this.imagenRepository.create({ url, es_externa: true });
-        // OJO: NO usamos await this.imagenRepository.save(imagen) aquí.
-        // TypeORM lo guardará en cascada al guardar el paquete.
       }
       imagenesFinales.push(imagen);
     }
-    
+
     return imagenesFinales;
   }
-  
-  // --- El resto de tus métodos (findAll, findOneById, etc.) ---
-  // ... (No necesitan cambios)
-  
+
   findAll(): Promise<Paquete[]> {
     return this.paqueteRepository.find({
       where: { borrado: false },
@@ -155,7 +167,7 @@ export class PaquetesService {
     });
   }
 
-   async findOneById(id: string): Promise<Paquete> {
+  async findOneById(id: string): Promise<Paquete> {
     const paquete = await this.paqueteRepository.findOne({
       where: { id, borrado: false },
       relations: [
@@ -208,7 +220,7 @@ export class PaquetesService {
     }
     return url;
   }
-   async remove(id: string): Promise<{ message: string }> {
+  async remove(id: string): Promise<{ message: string }> {
     const paquete = await this.findOneById(id);
     paquete.borrado = true;
     await this.paqueteRepository.save(paquete);
@@ -217,14 +229,12 @@ export class PaquetesService {
     };
   }
 
-    async exportToExcel(id: string): Promise<Buffer> {
+  async exportToExcel(id: string): Promise<Buffer> {
     const paquete = await this.findOneById(id);
     if (!paquete) {
       throw new NotFoundException(`Paquete con ID "${id}" no encontrado`);
     }
 
-  
     return generarExcelDePaquete(paquete);
   }
-
 }

@@ -22,7 +22,9 @@ export class ImagenController {
   @Post('upload')
   createFromBase64(@Body() createImagenDto: CreateImagenDto) {
     if (!createImagenDto.image) {
-      throw new BadRequestException('No se ha proporcionado una imagen en formato Base64.');
+      throw new BadRequestException(
+        'No se ha proporcionado una imagen en formato Base64.',
+      );
     }
     return this.imagenService.createFromBase64(createImagenDto);
   }

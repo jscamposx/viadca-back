@@ -51,7 +51,6 @@ class HotelDto {
   @IsOptional()
   total_calificaciones?: number;
 
-  
   @IsArray()
   @IsUUID('all', { each: true })
   @IsOptional()
@@ -113,8 +112,8 @@ export class CreatePaqueteDto {
   itinerario: ItinerarioDto[];
 
   @IsArray()
-  @IsUUID('all', { each: true }) // Se espera un array de UUIDs
-  imageIds: string[]; // ¡Aquí está el cambio!
+  @IsUUID('all', { each: true })
+  imageIds: string[];
 
   @IsObject()
   @ValidateNested()

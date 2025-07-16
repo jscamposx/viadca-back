@@ -7,7 +7,7 @@ import { Paquete } from '../paquetes/entidades/paquete.entity';
 import { Hotel } from '../paquetes/entidades/hotel.entity';
 import { Vuelo } from '../paquetes/entidades/vuelo.entity';
 import { ImageHandlerService } from '../utils/image-handler.service';
-import { CreateImagenUrlDto } from './dto/create-imagen-url.dto'; // Importamos el nuevo DTO
+import { CreateImagenUrlDto } from './dto/create-imagen-url.dto';
 
 @Injectable()
 export class ImagenService {
@@ -23,63 +23,73 @@ export class ImagenService {
     private readonly imageHandlerService: ImageHandlerService,
   ) {}
 
-  async createFromBase64(
-    createImagenDto: CreateImagenDto,
-  ): Promise<Imagen> {
+  async createFromBase64(createImagenDto: CreateImagenDto): Promise<Imagen> {
     const { image: base64Image, paqueteId, hotelId, vueloId } = createImagenDto;
-    
-    const { url } = await this.imageHandlerService.saveImageFromBase64(base64Image);
+
+    const { url } =
+      await this.imageHandlerService.saveImageFromBase64(base64Image);
 
     const nuevaImagen = new Imagen();
     nuevaImagen.url = url;
 
     if (paqueteId) {
-      const paquete = await this.paqueteRepository.findOne({ where: { id: paqueteId } });
-      if (!paquete) throw new NotFoundException(`Paquete con ID "${paqueteId}" no encontrado`);
+      const paquete = await this.paqueteRepository.findOne({
+        where: { id: paqueteId },
+      });
+      if (!paquete)
+        throw new NotFoundException(
+          `Paquete con ID "${paqueteId}" no encontrado`,
+        );
       nuevaImagen.paquete = paquete;
     }
 
     if (hotelId) {
-      const hotel = await this.hotelRepository.findOne({ where: { id: hotelId } });
-      if (!hotel) throw new NotFoundException(`Hotel con ID "${hotelId}" no encontrado`);
+      const hotel = await this.hotelRepository.findOne({
+        where: { id: hotelId },
+      });
+      if (!hotel)
+        throw new NotFoundException(`Hotel con ID "${hotelId}" no encontrado`);
       nuevaImagen.hotel = hotel;
     }
 
     if (vueloId) {
-      const vuelo = await this.vueloRepository.findOne({ where: { id: vueloId } });
-      if (!vuelo) throw new NotFoundException(`Vuelo con ID "${vueloId}" no encontrado`);
+      const vuelo = await this.vueloRepository.findOne({
+        where: { id: vueloId },
+      });
+      if (!vuelo)
+        throw new NotFoundException(`Vuelo con ID "${vueloId}" no encontrado`);
       nuevaImagen.vuelo = vuelo;
     }
 
     return this.imagenRepository.save(nuevaImagen);
   }
 
-
-    async createFromUrl(
-    createImagenUrlDto: CreateImagenUrlDto,
-  ): Promise<Imagen> {
+  async createFromUrl(createImagenUrlDto: CreateImagenUrlDto): Promise<Imagen> {
     const { url: imageUrl, paqueteId, hotelId, vueloId } = createImagenUrlDto;
-    
-    // 1. Usamos el método existente para descargar y guardar la imagen de la URL
+
     const { url } = await this.imageHandlerService.saveImageFromUrl(imageUrl);
 
     const nuevaImagen = new Imagen();
-    nuevaImagen.url = url; // Guardamos la URL local, no la de pexels.com
+    nuevaImagen.url = url;
 
-    // 2. Asociamos la imagen a la entidad correspondiente
     if (paqueteId) {
-      const paquete = await this.paqueteRepository.findOne({ where: { id: paqueteId } });
-      if (!paquete) throw new NotFoundException(`Paquete con ID "${paqueteId}" no encontrado`);
+      const paquete = await this.paqueteRepository.findOne({
+        where: { id: paqueteId },
+      });
+      if (!paquete)
+        throw new NotFoundException(
+          `Paquete con ID "${paqueteId}" no encontrado`,
+        );
       nuevaImagen.paquete = paquete;
     }
-    // ... (lógica idéntica para hotelId y vueloId)
 
-    // 3. Guardamos el registro en la base de datos
     return this.imagenRepository.save(nuevaImagen);
   }
-  
+
   findAll(): Promise<Imagen[]> {
-    return this.imagenRepository.find({ relations: ['paquete', 'hotel', 'vuelo'] });
+    return this.imagenRepository.find({
+      relations: ['paquete', 'hotel', 'vuelo'],
+    });
   }
 
   async remove(id: string): Promise<{ message: string }> {

@@ -1,9 +1,4 @@
-import {
-  Column,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Paquete } from '../../paquetes/entidades/paquete.entity';
 import { Hotel } from '../../paquetes/entidades/hotel.entity';
 import { Vuelo } from '../../paquetes/entidades/vuelo.entity';
@@ -19,9 +14,8 @@ export class Imagen {
   @Column({ type: 'int', nullable: true })
   orden: number;
 
-   @Column({ default: false })
+  @Column({ default: false })
   es_externa: boolean;
-
 
   @ManyToOne(() => Paquete, (paquete) => paquete.imagenes, {
     nullable: true,

@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsUrl, IsOptional, IsUUID } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsUrl,
+  IsOptional,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateImagenUrlDto {
   @IsString()

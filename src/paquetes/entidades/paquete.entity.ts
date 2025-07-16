@@ -10,7 +10,7 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { Itinerario } from './itinerario.entity';
-import { Imagen } from '../../imagen/entidades/imagen.entity'; // Asegúrate que la ruta sea correcta
+import { Imagen } from '../../imagen/entidades/imagen.entity';
 
 import { Hotel } from './hotel.entity';
 import { Vuelo } from './vuelo.entity';

@@ -34,7 +34,7 @@ export class ImageHandlerService {
       );
     }
   }
-  
+
   async saveImageFromBuffer(buffer: Buffer): Promise<{ url: string }> {
     try {
       return this.processImageInWorker(buffer);

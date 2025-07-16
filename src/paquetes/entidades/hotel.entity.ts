@@ -5,7 +5,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Imagen } from '../../imagen/entidades/imagen.entity'; // Asegúrate que la ruta sea correcta
+import { Imagen } from '../../imagen/entidades/imagen.entity';
 import { Paquete } from './paquete.entity';
 
 @Entity({ name: 'hoteles' })
