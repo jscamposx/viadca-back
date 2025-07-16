@@ -1,3 +1,5 @@
+// src/imagen/imagen.controller.ts
+
 import {
   Controller,
   Post,
@@ -10,31 +12,23 @@ import {
 } from '@nestjs/common';
 import { ImagenService } from './imagen.service';
 import { CreateImagenDto } from './dto/create-imagen.dto';
-import { CreateImagenUrlDto } from './dto/create-imagen-url.dto'; // Importamos el nuevo DTO
 
 @Controller('imagenes')
 export class ImagenController {
   constructor(private readonly imagenService: ImagenService) {}
 
   /**
-   * Endpoint para subir una imagen en formato Base64.
+   * Endpoint unificado para subir una imagen desde Base64 o una URL.
    */
   @Post('upload')
-  createFromBase64(@Body() createImagenDto: CreateImagenDto) {
-    if (!createImagenDto.image) {
+  create(@Body() createImagenDto: CreateImagenDto) {
+    if (!createImagenDto.image && !createImagenDto.url) {
       throw new BadRequestException(
-        'No se ha proporcionado una imagen en formato Base64.',
+        'Se debe proporcionar una imagen en formato Base64 o una URL.',
       );
     }
-    return this.imagenService.createFromBase64(createImagenDto);
-  }
-
-  /**
-   * NUEVO: Endpoint para procesar una imagen desde una URL.
-   */
-  @Post('upload-from-url')
-  createFromUrl(@Body() createImagenUrlDto: CreateImagenUrlDto) {
-    return this.imagenService.createFromUrl(createImagenUrlDto);
+    // Llama a un nuevo método unificado en el servicio
+    return this.imagenService.create(createImagenDto);
   }
 
   @Get()

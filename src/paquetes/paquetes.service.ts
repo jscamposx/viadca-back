@@ -38,23 +38,41 @@ export class PaquetesService {
       ...paqueteDetails
     } = createPaqueteDto;
 
+    // ✅ LÓGICA MEJORADA PARA EL HOTEL
+    let hotel: Hotel | null = null;
+    if (hotelDto.placeId) {
+      hotel = await this.hotelRepository.findOne({ where: { placeId: hotelDto.placeId } });
+    }
+
+    if (!hotel) {
+      // Si el hotel no existe, lo creamos
+      const hotelImagenes = await this.procesarIdentificadoresDeImagen(
+        hotelDto?.imageIds,
+      );
+      hotel = this.hotelRepository.create({
+        ...hotelDto,
+        imagenes: hotelImagenes,
+      });
+    } else {
+      // Si ya existe, actualizamos sus datos (opcional, pero recomendado)
+      Object.assign(hotel, hotelDto);
+       if (hotelDto.imageIds) {
+        hotel.imagenes = await this.procesarIdentificadoresDeImagen(
+          hotelDto.imageIds,
+        );
+      }
+    }
+  
+
     const paqueteImagenes =
       await this.procesarIdentificadoresDeImagen(imageIds);
-    const hotelImagenes = await this.procesarIdentificadoresDeImagen(
-      hotelDto?.imageIds,
-    );
-
-    const hotel = this.hotelRepository.create({
-      ...hotelDto,
-      imagenes: hotelImagenes,
-    });
 
     const nuevoPaquete = this.paqueteRepository.create({
       ...paqueteDetails,
       url: await this.generarUrlUnica(),
       itinerario,
       imagenes: paqueteImagenes,
-      hotel,
+      hotel, // Asignamos el hotel (existente o nuevo)
     });
 
     if (id_vuelo) {
@@ -70,6 +88,12 @@ export class PaquetesService {
       const paqueteGuardado = await this.paqueteRepository.save(nuevoPaquete);
       return this.findOneById(paqueteGuardado.id);
     } catch (error) {
+       // El error original de duplicado se captura aquí
+      if (error.code === 'ER_DUP_ENTRY') {
+          throw new InternalServerErrorException(
+          `Error de duplicado al guardar el paquete. Es posible que el 'placeId' del hotel ya exista. Detalle: ${error.message}`,
+        );
+      }
       throw new InternalServerErrorException(
         `Error al crear el paquete: ${error.message}`,
       );

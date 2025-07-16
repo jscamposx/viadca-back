@@ -1,3 +1,5 @@
+// src/paquetes/dto/paquete/create-paquete.dto.ts - CÓDIGO CORREGIDO
+
 import { Type } from 'class-transformer';
 import {
   IsArray,
@@ -10,7 +12,6 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
-  IsUUID,
 } from 'class-validator';
 
 class ItinerarioDto {
@@ -22,20 +23,11 @@ class ItinerarioDto {
   descripcion: string;
 }
 
-class ImagenDto {
-  @IsString()
-  @IsNotEmpty()
-  url: string;
-
-  @IsInt()
-  @IsOptional()
-  orden?: number;
-}
-
+// ✅ DTO de Hotel corregido y simplificado
 class HotelDto {
   @IsString()
   @IsNotEmpty()
-  id: string;
+  placeId: string; // El único identificador que necesitamos
 
   @IsString()
   @IsNotEmpty()
@@ -52,9 +44,9 @@ class HotelDto {
   total_calificaciones?: number;
 
   @IsArray()
-  @IsUUID('all', { each: true })
+  @IsString({ each: true })
   @IsOptional()
-  imageIds?: string[]; // Campo para los IDs de las imágenes del hotel
+  imageIds?: string[];
 }
 
 export class CreatePaqueteDto {
@@ -112,7 +104,7 @@ export class CreatePaqueteDto {
   itinerario: ItinerarioDto[];
 
   @IsArray()
-  @IsUUID('all', { each: true })
+  @IsString({ each: true }) // Permite UUIDs y URLs
   imageIds: string[];
 
   @IsObject()

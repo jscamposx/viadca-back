@@ -1,16 +1,26 @@
+// src/imagen/dto/create-imagen.dto.ts
+
 import {
   IsString,
-  IsNotEmpty,
   IsOptional,
   IsUUID,
-  IsBase64,
+  IsUrl,
+  ValidateIf,
+  IsNotEmpty,
 } from 'class-validator';
 
 export class CreateImagenDto {
-  @IsString()
+  // Solo se requiere si no se proporciona `url`
+  @ValidateIf((o) => !o.url)
   @IsNotEmpty()
-  // No es necesaria la validación IsBase64 aquí si la decodificación se maneja en el servicio
-  image: string; // Recibirá la cadena Base64 completa (ej: "data:image/jpeg;base64,...")
+  @IsString()
+  image?: string; // Base64
+
+  // Solo se requiere si no se proporciona `image`
+  @ValidateIf((o) => !o.image)
+  @IsUrl()
+  @IsNotEmpty()
+  url?: string; // URL externa
 
   @IsOptional()
   @IsUUID()

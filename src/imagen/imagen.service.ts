@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+// src/imagen/imagen.service.ts
+
+import {
+  Injectable,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Imagen } from './entidades/imagen.entity';
@@ -7,7 +13,6 @@ import { Paquete } from '../paquetes/entidades/paquete.entity';
 import { Hotel } from '../paquetes/entidades/hotel.entity';
 import { Vuelo } from '../paquetes/entidades/vuelo.entity';
 import { ImageHandlerService } from '../utils/image-handler.service';
-import { CreateImagenUrlDto } from './dto/create-imagen-url.dto';
 
 @Injectable()
 export class ImagenService {
@@ -23,63 +28,41 @@ export class ImagenService {
     private readonly imageHandlerService: ImageHandlerService,
   ) {}
 
-  async createFromBase64(createImagenDto: CreateImagenDto): Promise<Imagen> {
-    const { image: base64Image, paqueteId, hotelId, vueloId } = createImagenDto;
-
-    const { url } =
-      await this.imageHandlerService.saveImageFromBase64(base64Image);
-
+  /**
+   * Método unificado para crear una imagen desde Base64 o URL.
+   */
+  async create(createImagenDto: CreateImagenDto): Promise<Imagen> {
+    const { image, url, paqueteId, hotelId, vueloId } = createImagenDto;
     const nuevaImagen = new Imagen();
-    nuevaImagen.url = url;
 
+    if (url) {
+      // Si es una URL, la guardamos directamente
+      nuevaImagen.url = url;
+      nuevaImagen.es_externa = true;
+    } else if (image) {
+      // Si es Base64, la procesamos para guardarla localmente
+      try {
+        const processedImage =
+          await this.imageHandlerService.saveImageFromBase64(image);
+        nuevaImagen.url = processedImage.url;
+        nuevaImagen.es_externa = false;
+      } catch (error) {
+        throw new InternalServerErrorException(
+          `Error al procesar la imagen Base64: ${error.message}`,
+        );
+      }
+    }
+
+    // Lógica para asociar la imagen a otras entidades
     if (paqueteId) {
       const paquete = await this.paqueteRepository.findOne({
         where: { id: paqueteId },
       });
-      if (!paquete)
+      if (!paquete) {
         throw new NotFoundException(
           `Paquete con ID "${paqueteId}" no encontrado`,
         );
-      nuevaImagen.paquete = paquete;
-    }
-
-    if (hotelId) {
-      const hotel = await this.hotelRepository.findOne({
-        where: { id: hotelId },
-      });
-      if (!hotel)
-        throw new NotFoundException(`Hotel con ID "${hotelId}" no encontrado`);
-      nuevaImagen.hotel = hotel;
-    }
-
-    if (vueloId) {
-      const vuelo = await this.vueloRepository.findOne({
-        where: { id: vueloId },
-      });
-      if (!vuelo)
-        throw new NotFoundException(`Vuelo con ID "${vueloId}" no encontrado`);
-      nuevaImagen.vuelo = vuelo;
-    }
-
-    return this.imagenRepository.save(nuevaImagen);
-  }
-
-  async createFromUrl(createImagenUrlDto: CreateImagenUrlDto): Promise<Imagen> {
-    const { url: imageUrl, paqueteId, hotelId, vueloId } = createImagenUrlDto;
-
-    const { url } = await this.imageHandlerService.saveImageFromUrl(imageUrl);
-
-    const nuevaImagen = new Imagen();
-    nuevaImagen.url = url;
-
-    if (paqueteId) {
-      const paquete = await this.paqueteRepository.findOne({
-        where: { id: paqueteId },
-      });
-      if (!paquete)
-        throw new NotFoundException(
-          `Paquete con ID "${paqueteId}" no encontrado`,
-        );
+      }
       nuevaImagen.paquete = paquete;
     }
 
