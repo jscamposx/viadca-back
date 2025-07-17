@@ -13,8 +13,8 @@ export class Hotel {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('text', { unique: true })
-  placeId: string;
+@Column('varchar', { length: 255, unique: true })
+placeId: string;
 
   @Column('text')
   nombre: string;
