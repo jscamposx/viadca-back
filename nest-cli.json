@@ -5,9 +5,8 @@
   "compilerOptions": {
     "deleteOutDir": true,
     "assets": [
-  "*.pem",
-  "assets/logo.png"
-],
+      "assets/**/*"
+    ],
     "watchAssets": true
   }
 }
