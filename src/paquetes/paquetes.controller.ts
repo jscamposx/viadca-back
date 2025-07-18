@@ -7,19 +7,13 @@ import {
   Param,
   Delete,
   NotFoundException,
-  UseInterceptors,
-  UploadedFiles,
   BadRequestException,
   Res,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { PaquetesService } from './paquetes.service';
 import { Paquete } from './entidades/paquete.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Imagen } from '../imagen/entidades/imagen.entity';
 import { ImageHandlerService } from '../utils/image-handler.service';
 import { Response } from 'express';
 

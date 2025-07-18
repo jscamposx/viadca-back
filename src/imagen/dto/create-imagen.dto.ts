@@ -5,7 +5,7 @@ import {
   IsUrl,
   ValidateIf,
   IsNotEmpty,
-  IsInt, // Importar IsInt
+  IsInt,
 } from 'class-validator';
 
 export class CreateImagenDto {
@@ -19,7 +19,6 @@ export class CreateImagenDto {
   @IsNotEmpty()
   url?: string;
 
-  // Añadir la propiedad "orden"
   @IsOptional()
   @IsInt()
   orden?: number;

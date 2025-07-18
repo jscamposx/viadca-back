@@ -4,6 +4,10 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["*.pem"] 
+    "assets": [
+  "*.pem",
+  "assets/logo.png"
+],
+    "watchAssets": true
   }
 }

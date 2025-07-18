@@ -9,7 +9,7 @@ import * as fs from 'fs';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`, // Carga el archivo .env correspondiente
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -23,7 +23,6 @@ import * as fs from 'fs';
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          // Deshabilita la sincronización en producción
           synchronize: configService.get<string>('NODE_ENV') !== 'production',
         };
         console.log('Database configuration:', dbConfig);
