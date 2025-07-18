@@ -3,12 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PaquetesModule } from './paquetes/paquetes.module';
 import { ImagenModule } from './imagen/imagen.module';
-import * as fs from 'fs'; // <-- ¡Importa el módulo 'fs'!
+import * as fs from 'fs';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`, // Carga el archivo .env correspondiente
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -22,8 +23,8 @@ import * as fs from 'fs'; // <-- ¡Importa el módulo 'fs'!
           password: configService.get<string>('DB_PASSWORD'),
           database: configService.get<string>('DB_DATABASE'),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: true,
-          
+          // Deshabilita la sincronización en producción
+          synchronize: configService.get<string>('NODE_ENV') !== 'production',
         };
         console.log('Database configuration:', dbConfig);
         return dbConfig;

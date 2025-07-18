@@ -27,8 +27,12 @@ export class ImagenService {
   ) {}
 
   async create(createImagenDto: CreateImagenDto): Promise<Imagen> {
-    const { image, url, paqueteId, hotelId, vueloId } = createImagenDto;
+    const { image, url, paqueteId, hotelId, vueloId, orden } = createImagenDto;
     const nuevaImagen = new Imagen();
+
+    if (orden !== undefined) {
+      nuevaImagen.orden = orden;
+    }
 
     if (url) {
       nuevaImagen.url = url;

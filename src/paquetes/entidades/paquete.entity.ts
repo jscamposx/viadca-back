@@ -26,8 +26,8 @@ export class Paquete {
   @Column('int')
   duracion: number;
 
- @Column('varchar', { length: 255, unique: true })
-url: string;
+  @Column('varchar', { length: 255, unique: true })
+  url: string;
 
   @ManyToOne(() => Vuelo, { eager: true, nullable: true })
   @JoinColumn({ name: 'id_vuelo' })

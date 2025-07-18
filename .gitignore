@@ -50,6 +50,8 @@ ca.pem
 *.pem
 .exe 
 *.exe
+
+*.env.development
 # Runtime data
 pids
 *.pid
