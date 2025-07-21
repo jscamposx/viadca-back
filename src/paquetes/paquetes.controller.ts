@@ -81,6 +81,4 @@ export class PaquetesController {
   remove(@Param('id') id: string) {
     return this.paquetesService.remove(id);
   }
-
-
 }

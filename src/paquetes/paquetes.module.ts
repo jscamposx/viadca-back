@@ -3,22 +3,22 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaquetesService } from './paquetes.service';
 import { PaquetesController } from './paquetes.controller';
 import { Paquete } from './entidades/paquete.entity';
-import { Hotel } from './entidades/hotel.entity';
 import { Itinerario } from './entidades/itinerario.entity';
-import { Vuelo } from '../vuelos/entidades/vuelo.entity'; // <-- Actualizado
 import { ImageHandlerService } from '../utils/image-handler.service';
 import { ImagenModule } from '../imagen/imagen.module';
 import { Imagen } from '../imagen/entidades/imagen.entity';
-import { VuelosModule } from '../vuelos/vuelos.module'; // <-- Añadido
+import { VuelosModule } from '../vuelos/vuelos.module';
+import { HotelesModule } from '../hoteles/hoteles.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Paquete, Hotel, Itinerario, Vuelo, Imagen]),
+    TypeOrmModule.forFeature([Paquete, Itinerario, Imagen]),
     ImagenModule,
-    VuelosModule, // <-- Añadido
+    VuelosModule,
+    HotelesModule,
   ],
-  controllers: [PaquetesController], // <-- VuelosController eliminado
-  providers: [PaquetesService, ImageHandlerService], // <-- VuelosService eliminado
+  controllers: [PaquetesController],
+  providers: [PaquetesService, ImageHandlerService],
   exports: [TypeOrmModule],
 })
 export class PaquetesModule {}

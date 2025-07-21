@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Imagen } from './entidades/imagen.entity';
 import { Paquete } from '../paquetes/entidades/paquete.entity';
-import { Hotel } from '../paquetes/entidades/hotel.entity';
+import { Hotel } from '../hoteles/entidades/hotel.entity';
 import { Vuelo } from '../vuelos/entidades/vuelo.entity';
 import { ImagenService } from './imagen.service';
 import { ImagenController } from './imagen.controller';

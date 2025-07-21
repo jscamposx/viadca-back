@@ -8,8 +8,8 @@ import { Repository } from 'typeorm';
 import { Imagen } from './entidades/imagen.entity';
 import { CreateImagenDto } from './dto/create-imagen.dto';
 import { Paquete } from '../paquetes/entidades/paquete.entity';
-import { Hotel } from '../paquetes/entidades/hotel.entity';
-import { Vuelo } from '../vuelos/entidades/vuelo.entity'; 
+import { Hotel } from '../hoteles/entidades/hotel.entity';
+import { Vuelo } from '../vuelos/entidades/vuelo.entity';
 import { ImageHandlerService } from '../utils/image-handler.service';
 
 @Injectable()

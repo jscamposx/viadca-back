@@ -6,7 +6,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Imagen } from '../../imagen/entidades/imagen.entity';
-import { Paquete } from './paquete.entity';
+import { Paquete } from '../../paquetes/entidades/paquete.entity';
 
 @Entity({ name: 'hoteles' })
 export class Hotel {

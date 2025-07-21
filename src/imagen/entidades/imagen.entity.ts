@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Paquete } from '../../paquetes/entidades/paquete.entity';
-import { Hotel } from '../../paquetes/entidades/hotel.entity';
+import { Hotel } from '../../hoteles/entidades/hotel.entity';
 import { Vuelo } from '../../vuelos/entidades/vuelo.entity';
 
 @Entity({ name: 'imagenes' })

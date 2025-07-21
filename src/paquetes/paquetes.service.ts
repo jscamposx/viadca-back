@@ -8,24 +8,24 @@ import { DataSource, Repository, DeepPartial, In } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { Paquete } from './entidades/paquete.entity';
 import { Imagen } from '../imagen/entidades/imagen.entity';
-import { Hotel } from './entidades/hotel.entity';
+import { Hotel } from '../hoteles/entidades/hotel.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { generarCodigoUnico } from '../utils/generar-url.util';
 import { Vuelo } from '../vuelos/entidades/vuelo.entity';
 import { generarExcelDePaquete } from '../utils/plantilla-excel';
+import { HotelesService } from '../hoteles/hoteles.service';
 
 @Injectable()
 export class PaquetesService {
   constructor(
     @InjectRepository(Paquete)
     private readonly paqueteRepository: Repository<Paquete>,
-    @InjectRepository(Hotel)
-    private readonly hotelRepository: Repository<Hotel>,
     @InjectRepository(Imagen)
     private readonly imagenRepository: Repository<Imagen>,
     @InjectRepository(Vuelo)
     private readonly vueloRepository: Repository<Vuelo>,
+    private readonly hotelesService: HotelesService, // <-- Añadido
     private readonly dataSource: DataSource,
   ) {}
 
@@ -38,28 +38,13 @@ export class PaquetesService {
       ...paqueteDetails
     } = createPaqueteDto;
 
-    let hotel: Hotel | null = null;
-    if (hotelDto.placeId) {
-      hotel = await this.hotelRepository.findOne({
-        where: { placeId: hotelDto.placeId },
-      });
-    }
-
-    if (!hotel) {
-      const hotelImagenes = await this.procesarIdentificadoresDeImagen(
-        hotelDto?.imageIds,
+    let hotel: Hotel;
+    try {
+      hotel = await this.hotelesService.create(hotelDto);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Error al procesar el hotel: ${error.message}`,
       );
-      hotel = this.hotelRepository.create({
-        ...hotelDto,
-        imagenes: hotelImagenes,
-      });
-    } else {
-      Object.assign(hotel, hotelDto);
-      if (hotelDto.imageIds) {
-        hotel.imagenes = await this.procesarIdentificadoresDeImagen(
-          hotelDto.imageIds,
-        );
-      }
     }
 
     const paqueteImagenes =
@@ -86,11 +71,6 @@ export class PaquetesService {
       const paqueteGuardado = await this.paqueteRepository.save(nuevoPaquete);
       return this.findOneById(paqueteGuardado.id);
     } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY') {
-        throw new InternalServerErrorException(
-          `Error de duplicado al guardar el paquete. Es posible que el 'placeId' del hotel ya exista. Detalle: ${error.message}`,
-        );
-      }
       throw new InternalServerErrorException(
         `Error al crear el paquete: ${error.message}`,
       );
@@ -118,12 +98,10 @@ export class PaquetesService {
     }
 
     if (hotelDto) {
-      Object.assign(paquete.hotel, hotelDto);
-      if (hotelDto.imageIds) {
-        paquete.hotel.imagenes = await this.procesarIdentificadoresDeImagen(
-          hotelDto.imageIds,
-        );
-      }
+      paquete.hotel = await this.hotelesService.update(
+        paquete.hotel.id,
+        hotelDto,
+      );
     }
 
     if (id_vuelo) {
