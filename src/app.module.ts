@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PaquetesModule } from './paquetes/paquetes.module';
 import { ImagenModule } from './imagen/imagen.module';
-import * as fs from 'fs';
+import { VuelosModule } from './vuelos/vuelos.module'; 
 
 @Module({
   imports: [
@@ -31,6 +31,7 @@ import * as fs from 'fs';
     }),
     PaquetesModule,
     ImagenModule,
+    VuelosModule, 
   ],
 })
 export class AppModule {}

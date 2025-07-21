@@ -82,19 +82,5 @@ export class PaquetesController {
     return this.paquetesService.remove(id);
   }
 
-  @Post('upload-base64')
-  async uploadImageFromBase64(@Body('image') base64Image: string) {
-    if (!base64Image || typeof base64Image !== 'string') {
-      throw new BadRequestException(
-        'No se proporcionó una imagen válida en formato Base64.',
-      );
-    }
-    try {
-      return await this.imageHandlerService.saveImageFromBase64(base64Image);
-    } catch (error) {
-      throw new BadRequestException(
-        `Error al procesar la imagen: ${error.message}`,
-      );
-    }
-  }
+
 }

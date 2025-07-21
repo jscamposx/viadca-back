@@ -12,7 +12,7 @@ import { Hotel } from './entidades/hotel.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { generarCodigoUnico } from '../utils/generar-url.util';
-import { Vuelo } from './entidades/vuelo.entity';
+import { Vuelo } from '../vuelos/entidades/vuelo.entity';
 import { generarExcelDePaquete } from '../utils/plantilla-excel';
 
 @Injectable()
