@@ -52,9 +52,11 @@ export class VuelosService {
       throw new NotFoundException(`Vuelo con ID "${id}" no encontrado`);
     }
 
-    if (imageIds) {
+    if (imageIds && imageIds.length > 0) {
       vuelo.imagenes =
         await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
+    } else if (imageIds) {
+      vuelo.imagenes = [];
     }
 
     return this.vueloRepository.save(vuelo);
