@@ -1,22 +1,4 @@
-import { Type } from 'class-transformer';
-import {
-  IsArray,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
-
-class ImagenDto {
-  @IsString()
-  @IsNotEmpty()
-  url: string;
-
-  @IsInt()
-  @IsOptional()
-  orden?: number;
-}
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateVueloDto {
   @IsString()
@@ -28,8 +10,7 @@ export class CreateVueloDto {
   nombre: string;
 
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ImagenDto)
+  @IsString({ each: true })
   @IsOptional()
-  imagenes?: ImagenDto[];
+  imageIds?: string[];
 }

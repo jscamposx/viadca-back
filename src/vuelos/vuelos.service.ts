@@ -4,15 +4,14 @@ import { Repository } from 'typeorm';
 import { Vuelo } from './entidades/vuelo.entity';
 import { CreateVueloDto } from './dto/create-vuelo.dto';
 import { UpdateVueloDto } from './dto/update-vuelo.dto';
-import { Imagen } from '../imagen/entidades/imagen.entity';
+import { ImagenService } from '../imagen/imagen.service';
 
 @Injectable()
 export class VuelosService {
   constructor(
     @InjectRepository(Vuelo)
     private readonly vueloRepository: Repository<Vuelo>,
-    @InjectRepository(Imagen)
-    private readonly imagenRepository: Repository<Imagen>,
+    private readonly imagenService: ImagenService,
   ) {}
 
   findAll(): Promise<Vuelo[]> {
@@ -31,20 +30,21 @@ export class VuelosService {
   }
 
   async create(createVueloDto: CreateVueloDto): Promise<Vuelo> {
-    const { imagenes, ...vueloDetails } = createVueloDto;
-    const vuelo = this.vueloRepository.create({
-      ...vueloDetails,
-      imagenes: imagenes
-        ? imagenes.map((imgDto) => this.imagenRepository.create(imgDto))
-        : [],
-    });
+    const { imageIds, ...vueloDetails } = createVueloDto;
+    const vuelo = this.vueloRepository.create(vueloDetails);
+
+    if (imageIds) {
+      vuelo.imagenes =
+        await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
+    }
+
     return this.vueloRepository.save(vuelo);
   }
 
   async update(id: string, updateVueloDto: UpdateVueloDto): Promise<Vuelo> {
-    const { imagenes, ...vueloDetails } = updateVueloDto;
+    const { imageIds, ...vueloDetails } = updateVueloDto;
     const vuelo = await this.vueloRepository.preload({
-      id: id,
+      id,
       ...vueloDetails,
     });
 
@@ -52,17 +52,9 @@ export class VuelosService {
       throw new NotFoundException(`Vuelo con ID "${id}" no encontrado`);
     }
 
-    if (imagenes) {
-      const imagenesAnteriores = await this.imagenRepository.find({
-        where: { vuelo: { id } },
-      });
-      if (imagenesAnteriores.length > 0) {
-        await this.imagenRepository.remove(imagenesAnteriores);
-      }
-
-      vuelo.imagenes = imagenes.map((imgDto) =>
-        this.imagenRepository.create(imgDto),
-      );
+    if (imageIds) {
+      vuelo.imagenes =
+        await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
     }
 
     return this.vueloRepository.save(vuelo);
