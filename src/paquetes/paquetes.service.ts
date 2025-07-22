@@ -15,6 +15,7 @@ import { generarCodigoUnico } from '../utils/generar-url.util';
 import { Vuelo } from '../vuelos/entidades/vuelo.entity';
 import { generarExcelDePaquete } from '../utils/plantilla-excel';
 import { HotelesService } from '../hoteles/hoteles.service';
+import { Itinerario } from './entidades/itinerario.entity';
 
 @Injectable()
 export class PaquetesService {
@@ -25,7 +26,9 @@ export class PaquetesService {
     private readonly imagenRepository: Repository<Imagen>,
     @InjectRepository(Vuelo)
     private readonly vueloRepository: Repository<Vuelo>,
-    private readonly hotelesService: HotelesService, // <-- Añadido
+    @InjectRepository(Itinerario)
+    private readonly itinerarioRepository: Repository<Itinerario>,
+    private readonly hotelesService: HotelesService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -33,7 +36,7 @@ export class PaquetesService {
     const {
       imageIds,
       hotel: hotelDto,
-      itinerario,
+      itinerario: itinerarioDto,
       id_vuelo,
       ...paqueteDetails
     } = createPaqueteDto;
@@ -50,6 +53,10 @@ export class PaquetesService {
 
     const paqueteImagenes =
       await this.procesarIdentificadoresDeImagen(imageIds);
+
+    const itinerario = itinerarioDto.map((dto) =>
+      this.itinerarioRepository.create(dto),
+    );
 
     const nuevoPaquete = this.paqueteRepository.create({
       ...paqueteDetails,
@@ -87,13 +94,22 @@ export class PaquetesService {
     const {
       imageIds,
       hotel: hotelDto,
-      itinerario,
+      itinerario: itinerarioDto,
       id_vuelo,
       ...paqueteDetails
     } = updatePaqueteDto;
 
     Object.assign(paquete, paqueteDetails);
-    if (itinerario) paquete.itinerario = itinerario as any;
+
+    if (itinerarioDto) {
+      if (paquete.itinerario && paquete.itinerario.length > 0) {
+        await this.itinerarioRepository.remove(paquete.itinerario);
+      }
+
+      paquete.itinerario = itinerarioDto.map((dto) =>
+        this.itinerarioRepository.create(dto),
+      );
+    }
 
     if (imageIds) {
       paquete.imagenes = await this.procesarIdentificadoresDeImagen(imageIds);

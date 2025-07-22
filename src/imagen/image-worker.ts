@@ -44,7 +44,12 @@ async function processImage(buffer: Buffer): Promise<{ url: string }> {
 
     return { url: fileUrl };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    let message = 'Error desconocido';
+    if (error instanceof Error) {
+      message = error.message;
+    } else {
+      message = String(error);
+    }
     throw new Error(`Error al procesar la imagen en el worker: ${message}`);
   }
 }
@@ -57,9 +62,15 @@ if (parentPort) {
         parentPort.postMessage({ status: 'done', ...result });
       }
     })
-    .catch((error: Error) => {
+    .catch((error: unknown) => {
       if (parentPort) {
-        parentPort.postMessage({ status: 'error', message: error.message });
+        let message = 'Error desconocido en el worker';
+        if (error instanceof Error) {
+          message = error.message;
+        } else {
+          message = String(error);
+        }
+        parentPort.postMessage({ status: 'error', message });
       }
     });
 }

@@ -18,7 +18,7 @@ import databaseConfig from './config/database.config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        ...configService.get('database'),
+        ...(await configService.get('database')),
       }),
     }),
     PaquetesModule,
