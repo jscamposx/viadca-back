@@ -3,6 +3,12 @@ import axios from 'axios';
 import * as path from 'path';
 import { Worker } from 'worker_threads';
 
+interface WorkerResult {
+  status: 'done' | 'error';
+  url?: string;
+  message?: string;
+}
+
 @Injectable()
 export class ImageHandlerService {
   async saveImageFromUrl(imageUrl: string): Promise<{ url: string }> {
@@ -52,8 +58,8 @@ export class ImageHandlerService {
         workerData: { buffer },
       });
 
-      worker.on('message', (result) => {
-        if (result.status === 'done') {
+      worker.on('message', (result: WorkerResult) => {
+        if (result.status === 'done' && result.url) {
           resolve({ url: result.url });
         } else {
           reject(new InternalServerErrorException(result.message));

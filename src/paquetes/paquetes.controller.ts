@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   NotFoundException,
-  BadRequestException,
   Res,
 } from '@nestjs/common';
 import { PaquetesService } from './paquetes.service';

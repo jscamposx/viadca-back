@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, DeepPartial, In } from 'typeorm';
+import { DataSource, Repository, In } from 'typeorm';
 import { isUUID } from 'class-validator';
 import { Paquete } from './entidades/paquete.entity';
 import { Imagen } from '../imagen/entidades/imagen.entity';
@@ -42,8 +42,9 @@ export class PaquetesService {
     try {
       hotel = await this.hotelesService.create(hotelDto);
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       throw new InternalServerErrorException(
-        `Error al procesar el hotel: ${error.message}`,
+        `Error al procesar el hotel: ${message}`,
       );
     }
 
@@ -71,8 +72,9 @@ export class PaquetesService {
       const paqueteGuardado = await this.paqueteRepository.save(nuevoPaquete);
       return this.findOneById(paqueteGuardado.id);
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       throw new InternalServerErrorException(
-        `Error al crear el paquete: ${error.message}`,
+        `Error al crear el paquete: ${message}`,
       );
     }
   }
@@ -117,8 +119,9 @@ export class PaquetesService {
       await this.paqueteRepository.save(paquete);
       return this.findOneById(id);
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       throw new InternalServerErrorException(
-        `Error al actualizar el paquete: ${error.message}`,
+        `Error al actualizar el paquete: ${message}`,
       );
     }
   }

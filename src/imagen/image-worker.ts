@@ -4,6 +4,10 @@ import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
 
+interface WorkerData {
+  buffer: Buffer;
+}
+
 async function convertirAAvif(buffer: Buffer): Promise<Buffer> {
   return sharp(buffer)
     .avif({
@@ -40,20 +44,20 @@ async function processImage(buffer: Buffer): Promise<{ url: string }> {
 
     return { url: fileUrl };
   } catch (error) {
-    throw new Error(
-      `Error al procesar la imagen en el worker: ${error.message}`,
-    );
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Error al procesar la imagen en el worker: ${message}`);
   }
 }
 
 if (parentPort) {
-  processImage(workerData.buffer)
+  const data = workerData as WorkerData;
+  processImage(data.buffer)
     .then((result) => {
       if (parentPort) {
         parentPort.postMessage({ status: 'done', ...result });
       }
     })
-    .catch((error) => {
+    .catch((error: Error) => {
       if (parentPort) {
         parentPort.postMessage({ status: 'error', message: error.message });
       }

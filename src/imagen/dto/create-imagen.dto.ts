@@ -9,12 +9,12 @@ import {
 } from 'class-validator';
 
 export class CreateImagenDto {
-  @ValidateIf((o) => !o.url)
+  @ValidateIf((o: CreateImagenDto) => !o.url)
   @IsNotEmpty()
   @IsString()
   image?: string;
 
-  @ValidateIf((o) => !o.image)
+  @ValidateIf((o: CreateImagenDto) => !o.image)
   @IsUrl()
   @IsNotEmpty()
   url?: string;

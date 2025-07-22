@@ -44,8 +44,9 @@ export class ImagenService {
         nuevaImagen.url = processedImage.url;
         nuevaImagen.es_externa = false;
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
         throw new InternalServerErrorException(
-          `Error al procesar la imagen Base64: ${error.message}`,
+          `Error al procesar la imagen Base64: ${message}`,
         );
       }
     }
