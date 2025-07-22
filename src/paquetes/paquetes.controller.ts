@@ -14,7 +14,7 @@ import { PaquetesService } from './paquetes.service';
 import { Paquete } from './entidades/paquete.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
-import { ImageHandlerService } from '../utils/image-handler.service';
+import { ImageHandlerService } from '../imagen/image-handler.service';
 import { Response } from 'express';
 
 @Controller('paquetes')

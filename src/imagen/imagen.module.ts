@@ -6,11 +6,12 @@ import { Hotel } from '../hoteles/entidades/hotel.entity';
 import { Vuelo } from '../vuelos/entidades/vuelo.entity';
 import { ImagenService } from './imagen.service';
 import { ImagenController } from './imagen.controller';
-import { ImageHandlerService } from '../utils/image-handler.service';
+import { ImageHandlerService } from './image-handler.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Imagen, Paquete, Hotel, Vuelo])],
   providers: [ImagenService, ImageHandlerService],
   controllers: [ImagenController],
+  exports: [ImageHandlerService, ImagenService],
 })
 export class ImagenModule {}

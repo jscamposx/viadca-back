@@ -10,7 +10,7 @@ import { CreateImagenDto } from './dto/create-imagen.dto';
 import { Paquete } from '../paquetes/entidades/paquete.entity';
 import { Hotel } from '../hoteles/entidades/hotel.entity';
 import { Vuelo } from '../vuelos/entidades/vuelo.entity';
-import { ImageHandlerService } from '../utils/image-handler.service';
+import { ImageHandlerService } from './image-handler.service';
 
 @Injectable()
 export class ImagenService {
