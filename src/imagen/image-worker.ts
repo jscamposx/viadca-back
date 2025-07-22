@@ -8,6 +8,11 @@ interface WorkerData {
   buffer: Buffer;
 }
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
 async function convertirAAvif(buffer: Buffer): Promise<Buffer> {
   return sharp(buffer)
     .avif({
@@ -43,13 +48,8 @@ async function processImage(buffer: Buffer): Promise<{ url: string }> {
     fs.writeFileSync(filePath, avifBuffer);
 
     return { url: fileUrl };
-  } catch (error) {
-    let message = 'Error desconocido';
-    if (error instanceof Error) {
-      message = error.message;
-    } else {
-      message = String(error);
-    }
+  } catch (error: unknown) {
+    const message = getErrorMessage(error);
     throw new Error(`Error al procesar la imagen en el worker: ${message}`);
   }
 }
@@ -58,19 +58,10 @@ if (parentPort) {
   const data = workerData as WorkerData;
   processImage(data.buffer)
     .then((result) => {
-      if (parentPort) {
-        parentPort.postMessage({ status: 'done', ...result });
-      }
+      parentPort?.postMessage({ status: 'done', ...result });
     })
     .catch((error: unknown) => {
-      if (parentPort) {
-        let message = 'Error desconocido en el worker';
-        if (error instanceof Error) {
-          message = error.message;
-        } else {
-          message = String(error);
-        }
-        parentPort.postMessage({ status: 'error', message });
-      }
+      const message = getErrorMessage(error);
+      parentPort?.postMessage({ status: 'error', message });
     });
 }
