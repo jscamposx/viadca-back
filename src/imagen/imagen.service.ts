@@ -4,13 +4,14 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Imagen } from './entidades/imagen.entity';
 import { CreateImagenDto } from './dto/create-imagen.dto';
 import { Paquete } from '../paquetes/entidades/paquete.entity';
 import { Hotel } from '../hoteles/entidades/hotel.entity';
 import { Vuelo } from '../vuelos/entidades/vuelo.entity';
 import { ImageHandlerService } from './image-handler.service';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class ImagenService {
@@ -98,5 +99,34 @@ export class ImagenService {
       throw new NotFoundException(`Imagen con ID "${id}" no encontrada`);
     }
     return { message: `Imagen con ID "${id}" ha sido eliminada.` };
+  }
+
+  async procesarIdentificadoresDeImagen(
+    identificadores: string[] | undefined,
+  ): Promise<Imagen[]> {
+    if (!identificadores || identificadores.length === 0) {
+      return [];
+    }
+
+    const imagenesFinales: Imagen[] = [];
+    const uuids = identificadores.filter((id) => isUUID(id));
+    const urlsExternas = identificadores.filter((id) => id.startsWith('http'));
+
+    if (uuids.length > 0) {
+      const imagenesExistentes = await this.imagenRepository.findBy({
+        id: In(uuids),
+      });
+      imagenesFinales.push(...imagenesExistentes);
+    }
+
+    for (const url of urlsExternas) {
+      let imagen = await this.imagenRepository.findOne({ where: { url } });
+      if (!imagen) {
+        imagen = this.imagenRepository.create({ url, es_externa: true });
+      }
+      imagenesFinales.push(imagen);
+    }
+
+    return imagenesFinales;
   }
 }

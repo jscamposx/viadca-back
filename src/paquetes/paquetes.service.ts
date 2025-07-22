@@ -4,11 +4,8 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository, In } from 'typeorm';
-import { isUUID } from 'class-validator';
+import { DataSource, Repository } from 'typeorm';
 import { Paquete } from './entidades/paquete.entity';
-import { Imagen } from '../imagen/entidades/imagen.entity';
-import { Hotel } from '../hoteles/entidades/hotel.entity';
 import { CreatePaqueteDto } from './dto/paquete/create-paquete.dto';
 import { UpdatePaqueteDto } from './dto/paquete/update-paquete.dto';
 import { generarCodigoUnico } from '../utils/generar-url.util';
@@ -16,19 +13,19 @@ import { Vuelo } from '../vuelos/entidades/vuelo.entity';
 import { generarExcelDePaquete } from '../utils/plantilla-excel';
 import { HotelesService } from '../hoteles/hoteles.service';
 import { Itinerario } from './entidades/itinerario.entity';
+import { ImagenService } from '../imagen/imagen.service';
 
 @Injectable()
 export class PaquetesService {
   constructor(
     @InjectRepository(Paquete)
     private readonly paqueteRepository: Repository<Paquete>,
-    @InjectRepository(Imagen)
-    private readonly imagenRepository: Repository<Imagen>,
     @InjectRepository(Vuelo)
     private readonly vueloRepository: Repository<Vuelo>,
     @InjectRepository(Itinerario)
     private readonly itinerarioRepository: Repository<Itinerario>,
     private readonly hotelesService: HotelesService,
+    private readonly imagenService: ImagenService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -41,7 +38,7 @@ export class PaquetesService {
       ...paqueteDetails
     } = createPaqueteDto;
 
-    let hotel: Hotel;
+    let hotel;
     try {
       hotel = await this.hotelesService.create(hotelDto);
     } catch (error) {
@@ -52,7 +49,7 @@ export class PaquetesService {
     }
 
     const paqueteImagenes =
-      await this.procesarIdentificadoresDeImagen(imageIds);
+      await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
 
     const itinerario = itinerarioDto.map((dto) =>
       this.itinerarioRepository.create(dto),
@@ -105,14 +102,16 @@ export class PaquetesService {
       if (paquete.itinerario && paquete.itinerario.length > 0) {
         await this.itinerarioRepository.remove(paquete.itinerario);
       }
-
       paquete.itinerario = itinerarioDto.map((dto) =>
         this.itinerarioRepository.create(dto),
       );
     }
 
     if (imageIds) {
-      paquete.imagenes = await this.procesarIdentificadoresDeImagen(imageIds);
+      // ✅ **ESTA ES LA LÍNEA CORREGIDA**
+      // Se llama al método desde el servicio de imágenes inyectado.
+      paquete.imagenes =
+        await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
     }
 
     if (hotelDto) {
@@ -140,35 +139,6 @@ export class PaquetesService {
         `Error al actualizar el paquete: ${message}`,
       );
     }
-  }
-
-  private async procesarIdentificadoresDeImagen(
-    identificadores: string[] | undefined,
-  ): Promise<Imagen[]> {
-    if (!identificadores || identificadores.length === 0) {
-      return [];
-    }
-
-    const imagenesFinales: Imagen[] = [];
-    const uuids = identificadores.filter((id) => isUUID(id));
-    const urlsExternas = identificadores.filter((id) => id.startsWith('http'));
-
-    if (uuids.length > 0) {
-      const imagenesExistentes = await this.imagenRepository.findBy({
-        id: In(uuids),
-      });
-      imagenesFinales.push(...imagenesExistentes);
-    }
-
-    for (const url of urlsExternas) {
-      let imagen = await this.imagenRepository.findOne({ where: { url } });
-      if (!imagen) {
-        imagen = this.imagenRepository.create({ url, es_externa: true });
-      }
-      imagenesFinales.push(imagen);
-    }
-
-    return imagenesFinales;
   }
 
   findAll(): Promise<Paquete[]> {
@@ -220,6 +190,7 @@ export class PaquetesService {
     }
     return paquete;
   }
+
   private async generarUrlUnica(): Promise<string> {
     let intento = 0;
     let url = '';
@@ -238,6 +209,7 @@ export class PaquetesService {
     }
     return url;
   }
+
   async remove(id: string): Promise<{ message: string }> {
     const paquete = await this.findOneById(id);
     paquete.borrado = true;

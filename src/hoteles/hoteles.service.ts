@@ -1,19 +1,17 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { isUUID } from 'class-validator';
+import { Repository } from 'typeorm';
 import { Hotel } from './entidades/hotel.entity';
-import { Imagen } from '../imagen/entidades/imagen.entity';
 import { CreateHotelDto } from './dto/create-hotel.dto';
 import { UpdateHotelDto } from './dto/update-hotel.dto';
+import { ImagenService } from '../imagen/imagen.service';
 
 @Injectable()
 export class HotelesService {
   constructor(
     @InjectRepository(Hotel)
     private readonly hotelRepository: Repository<Hotel>,
-    @InjectRepository(Imagen)
-    private readonly imagenRepository: Repository<Imagen>,
+    private readonly imagenService: ImagenService,
   ) {}
 
   findAll(): Promise<Hotel[]> {
@@ -36,7 +34,8 @@ export class HotelesService {
     const hotel = this.hotelRepository.create(hotelDetails);
 
     if (imageIds) {
-      hotel.imagenes = await this.procesarIdentificadoresDeImagen(imageIds);
+      hotel.imagenes =
+        await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
     }
 
     return this.hotelRepository.save(hotel);
@@ -54,7 +53,8 @@ export class HotelesService {
     }
 
     if (imageIds) {
-      hotel.imagenes = await this.procesarIdentificadoresDeImagen(imageIds);
+      hotel.imagenes =
+        await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
     }
 
     return this.hotelRepository.save(hotel);
@@ -66,34 +66,5 @@ export class HotelesService {
       throw new NotFoundException(`Hotel con ID "${id}" no encontrado`);
     }
     return { message: `Hotel con ID "${id}" ha sido eliminado.` };
-  }
-
-  private async procesarIdentificadoresDeImagen(
-    identificadores: string[],
-  ): Promise<Imagen[]> {
-    if (!identificadores || identificadores.length === 0) {
-      return [];
-    }
-
-    const imagenesFinales: Imagen[] = [];
-    const uuids = identificadores.filter((id) => isUUID(id));
-    const urlsExternas = identificadores.filter((id) => id.startsWith('http'));
-
-    if (uuids.length > 0) {
-      const imagenesExistentes = await this.imagenRepository.findBy({
-        id: In(uuids),
-      });
-      imagenesFinales.push(...imagenesExistentes);
-    }
-
-    for (const url of urlsExternas) {
-      let imagen = await this.imagenRepository.findOne({ where: { url } });
-      if (!imagen) {
-        imagen = this.imagenRepository.create({ url, es_externa: true });
-      }
-      imagenesFinales.push(imagen);
-    }
-
-    return imagenesFinales;
   }
 }
