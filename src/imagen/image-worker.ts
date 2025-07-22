@@ -18,7 +18,7 @@ async function convertirAAvif(buffer: Buffer): Promise<Buffer> {
     .avif({
       quality: 70,
       chromaSubsampling: '4:4:4',
-      effort: 6,
+      effort: 4,
     })
     .toBuffer();
 }

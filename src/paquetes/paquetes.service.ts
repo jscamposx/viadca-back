@@ -38,40 +38,52 @@ export class PaquetesService {
       ...paqueteDetails
     } = createPaqueteDto;
 
-    const hotel = await this.hotelesService.create(hotelDto);
-
-    const paqueteImagenes =
-      await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
-
-    const itinerario = itinerarioDto.map((dto) =>
-      this.itinerarioRepository.create(dto),
-    );
-
-    const nuevoPaquete = this.paqueteRepository.create({
-      ...paqueteDetails,
-      url: await this.generarUrlUnica(),
-      itinerario,
-      imagenes: paqueteImagenes,
-      hotel,
-    });
-
-    if (id_vuelo) {
-      const vuelo = await this.vueloRepository.findOne({
-        where: { id: id_vuelo },
-      });
-      if (!vuelo)
-        throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
-      nuevoPaquete.vuelo = vuelo;
-    }
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      const paqueteGuardado = await this.paqueteRepository.save(nuevoPaquete);
-      return this.findOneById(paqueteGuardado.id);
+      const hotel = await this.hotelesService.create(hotelDto);
+
+      const paqueteImagenes =
+        await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
+
+      const itinerario = itinerarioDto.map((dto) =>
+        this.itinerarioRepository.create(dto),
+      );
+
+      const nuevoPaquete = this.paqueteRepository.create({
+        ...paqueteDetails,
+        url: await this.generarUrlUnica(),
+        itinerario,
+        imagenes: paqueteImagenes,
+        hotel,
+      });
+
+      if (id_vuelo) {
+        const vuelo = await this.vueloRepository.findOne({
+          where: { id: id_vuelo },
+        });
+        if (!vuelo)
+          throw new NotFoundException(
+            `Vuelo con ID "${id_vuelo}" no encontrado`,
+          );
+        nuevoPaquete.vuelo = vuelo;
+      }
+
+      const paqueteGuardado = await queryRunner.manager.save(nuevoPaquete);
+
+      await queryRunner.commitTransaction();
+
+      return paqueteGuardado;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       const message = error instanceof Error ? error.message : String(error);
       throw new InternalServerErrorException(
         `Error al crear el paquete: ${message}`,
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -79,55 +91,67 @@ export class PaquetesService {
     id: string,
     updatePaqueteDto: UpdatePaqueteDto,
   ): Promise<Paquete> {
-    const paquete = await this.findOneById(id);
-    const {
-      imageIds,
-      hotel: hotelDto,
-      itinerario: itinerarioDto,
-      id_vuelo,
-      ...paqueteDetails
-    } = updatePaqueteDto;
-
-    Object.assign(paquete, paqueteDetails);
-
-    if (itinerarioDto) {
-      if (paquete.itinerario && paquete.itinerario.length > 0) {
-        await this.itinerarioRepository.remove(paquete.itinerario);
-      }
-      paquete.itinerario = itinerarioDto.map((dto) =>
-        this.itinerarioRepository.create(dto),
-      );
-    }
-
-    if (imageIds) {
-      paquete.imagenes =
-        await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
-    }
-
-    if (hotelDto) {
-      paquete.hotel = await this.hotelesService.update(
-        paquete.hotel.id,
-        hotelDto,
-      );
-    }
-
-    if (id_vuelo) {
-      const vuelo = await this.vueloRepository.findOne({
-        where: { id: id_vuelo },
-      });
-      if (!vuelo)
-        throw new NotFoundException(`Vuelo con ID "${id_vuelo}" no encontrado`);
-      paquete.vuelo = vuelo;
-    }
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
     try {
-      await this.paqueteRepository.save(paquete);
-      return this.findOneById(id);
+      const paquete = await this.findOneById(id);
+      const {
+        imageIds,
+        hotel: hotelDto,
+        itinerario: itinerarioDto,
+        id_vuelo,
+        ...paqueteDetails
+      } = updatePaqueteDto;
+
+      Object.assign(paquete, paqueteDetails);
+
+      if (itinerarioDto) {
+        if (paquete.itinerario && paquete.itinerario.length > 0) {
+          await queryRunner.manager.remove(paquete.itinerario);
+        }
+        paquete.itinerario = itinerarioDto.map((dto) =>
+          this.itinerarioRepository.create(dto),
+        );
+      }
+
+      if (imageIds) {
+        paquete.imagenes =
+          await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
+      }
+
+      if (hotelDto) {
+        paquete.hotel = await this.hotelesService.update(
+          paquete.hotel.id,
+          hotelDto,
+        );
+      }
+
+      if (id_vuelo) {
+        const vuelo = await this.vueloRepository.findOne({
+          where: { id: id_vuelo },
+        });
+        if (!vuelo)
+          throw new NotFoundException(
+            `Vuelo con ID "${id_vuelo}" no encontrado`,
+          );
+        paquete.vuelo = vuelo;
+      }
+
+      const paqueteActualizado = await queryRunner.manager.save(paquete);
+
+      await queryRunner.commitTransaction();
+
+      return paqueteActualizado;
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       const message = error instanceof Error ? error.message : String(error);
       throw new InternalServerErrorException(
         `Error al actualizar el paquete: ${message}`,
       );
+    } finally {
+      await queryRunner.release();
     }
   }
 
