@@ -38,15 +38,7 @@ export class PaquetesService {
       ...paqueteDetails
     } = createPaqueteDto;
 
-    let hotel;
-    try {
-      hotel = await this.hotelesService.create(hotelDto);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new InternalServerErrorException(
-        `Error al procesar el hotel: ${message}`,
-      );
-    }
+    const hotel = await this.hotelesService.create(hotelDto);
 
     const paqueteImagenes =
       await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
@@ -108,8 +100,6 @@ export class PaquetesService {
     }
 
     if (imageIds) {
-      // ✅ **ESTA ES LA LÍNEA CORREGIDA**
-      // Se llama al método desde el servicio de imágenes inyectado.
       paquete.imagenes =
         await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
     }

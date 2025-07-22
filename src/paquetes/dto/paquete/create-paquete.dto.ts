@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
-  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -11,6 +10,7 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator';
+import { CreateHotelDto } from '../../../hoteles/dto/create-hotel.dto';
 
 class ItinerarioDto {
   @IsInt()
@@ -19,31 +19,6 @@ class ItinerarioDto {
   @IsString()
   @IsNotEmpty()
   descripcion: string;
-}
-
-class HotelDto {
-  @IsString()
-  @IsNotEmpty()
-  placeId: string;
-
-  @IsString()
-  @IsNotEmpty()
-  nombre: string;
-
-  @IsNumber()
-  estrellas: number;
-
-  @IsBoolean()
-  isCustom: boolean;
-
-  @IsInt()
-  @IsOptional()
-  total_calificaciones?: number;
-
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  imageIds?: string[];
 }
 
 export class CreatePaqueteDto {
@@ -106,6 +81,6 @@ export class CreatePaqueteDto {
 
   @IsObject()
   @ValidateNested()
-  @Type(() => HotelDto)
-  hotel: HotelDto;
+  @Type(() => CreateHotelDto)
+  hotel: CreateHotelDto;
 }
