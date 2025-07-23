@@ -27,8 +27,6 @@ export class CreateHotelDto {
   @IsOptional()
   total_calificaciones?: number;
 
-  
-
   @IsArray()
   @IsString({ each: true })
   @IsOptional()

@@ -45,8 +45,6 @@ export class VuelosService {
   }
 
   async update(id: string, updateVueloDto: UpdateVueloDto): Promise<Vuelo> {
-
-
     const { imageIds, ...vueloDetails } = updateVueloDto;
 
     const vueloPreload = await this.vueloRepository.preload({

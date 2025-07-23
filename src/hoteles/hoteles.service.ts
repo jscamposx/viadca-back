@@ -15,12 +15,15 @@ export class HotelesService {
   ) {}
 
   findAll(): Promise<Hotel[]> {
-    return this.hotelRepository.find({ relations: ['imagenes'] });
+    return this.hotelRepository.find({
+      where: { borrado: false },
+      relations: ['imagenes'],
+    });
   }
 
   async findOne(id: string): Promise<Hotel> {
     const hotel = await this.hotelRepository.findOne({
-      where: { id },
+      where: { id, borrado: false },
       relations: ['imagenes'],
     });
     if (!hotel) {
@@ -61,10 +64,11 @@ export class HotelesService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const result = await this.hotelRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Hotel con ID "${id}" no encontrado`);
-    }
-    return { message: `Hotel con ID "${id}" ha sido eliminado.` };
+    const hotel = await this.findOne(id);
+
+    hotel.borrado = true;
+    await this.hotelRepository.save(hotel);
+
+    return { message: `Hotel con ID "${id}" ha sido marcado como eliminado.` };
   }
 }

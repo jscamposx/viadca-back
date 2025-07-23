@@ -5,9 +5,10 @@ import { Hotel } from '../hoteles/entidades/hotel.entity';
 import { Vuelo } from '../vuelos/entidades/vuelo.entity';
 import { PapeleraController } from './papelera.controller';
 import { PapeleraService } from './papelera.service';
+import { ImagenModule } from '../imagen/imagen.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Paquete, Hotel, Vuelo])],
+  imports: [TypeOrmModule.forFeature([Paquete, Hotel, Vuelo]), ImagenModule],
   controllers: [PapeleraController],
   providers: [PapeleraService],
 })

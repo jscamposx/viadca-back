@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import axios from 'axios';
 import * as path from 'path';
 import { Worker } from 'worker_threads';
+import * as fs from 'fs';
 
 interface WorkerResult {
   status: 'done' | 'error';
@@ -78,5 +79,25 @@ export class ImageHandlerService {
         }
       });
     });
+  }
+
+  async deleteImageFile(url: string): Promise<void> {
+    try {
+      const filename = path.basename(url);
+      const filePath = path.join(
+        __dirname,
+        '..',
+        '..',
+        'public',
+        'uploads',
+        filename,
+      );
+
+      if (fs.existsSync(filePath)) {
+        await fs.promises.unlink(filePath);
+      }
+    } catch (error) {
+      console.error(`Error al eliminar el archivo de imagen ${url}:`, error);
+    }
   }
 }
