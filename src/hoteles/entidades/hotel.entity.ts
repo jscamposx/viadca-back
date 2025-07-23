@@ -25,6 +25,9 @@ export class Hotel {
   @Column('boolean', { default: false })
   isCustom: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  borrado: boolean;
+
   @Column('int', { nullable: true })
   total_calificaciones?: number;
 

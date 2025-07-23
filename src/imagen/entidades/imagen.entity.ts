@@ -1,3 +1,4 @@
+// src/imagen/entidades/imagen.entity.ts
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Paquete } from '../../paquetes/entidades/paquete.entity';
 import { Hotel } from '../../hoteles/entidades/hotel.entity';
@@ -16,6 +17,9 @@ export class Imagen {
 
   @Column({ default: false })
   es_externa: boolean;
+
+  @Column({ type: 'boolean', default: false }) // <-- Columna para el soft delete
+  borrado: boolean;
 
   @ManyToOne(() => Paquete, (paquete) => paquete.imagenes, {
     nullable: true,

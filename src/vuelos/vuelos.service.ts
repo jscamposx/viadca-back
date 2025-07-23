@@ -15,12 +15,15 @@ export class VuelosService {
   ) {}
 
   findAll(): Promise<Vuelo[]> {
-    return this.vueloRepository.find({ relations: ['imagenes'] });
+    return this.vueloRepository.find({
+      where: { borrado: false },
+      relations: ['imagenes'],
+    });
   }
 
   async findOne(id: string): Promise<Vuelo> {
     const vuelo = await this.vueloRepository.findOne({
-      where: { id },
+      where: { id, borrado: false },
       relations: ['imagenes'],
     });
     if (!vuelo) {
@@ -42,31 +45,33 @@ export class VuelosService {
   }
 
   async update(id: string, updateVueloDto: UpdateVueloDto): Promise<Vuelo> {
+
+
     const { imageIds, ...vueloDetails } = updateVueloDto;
-    const vuelo = await this.vueloRepository.preload({
+
+    const vueloPreload = await this.vueloRepository.preload({
       id,
       ...vueloDetails,
     });
 
-    if (!vuelo) {
-      throw new NotFoundException(`Vuelo con ID "${id}" no encontrado`);
+    if (!vueloPreload) {
+      throw new NotFoundException(`Error al precargar el vuelo con ID "${id}"`);
     }
 
-    if (imageIds && imageIds.length > 0) {
-      vuelo.imagenes =
+    if (imageIds) {
+      vueloPreload.imagenes =
         await this.imagenService.procesarIdentificadoresDeImagen(imageIds);
-    } else if (imageIds) {
-      vuelo.imagenes = [];
     }
 
-    return this.vueloRepository.save(vuelo);
+    return this.vueloRepository.save(vueloPreload);
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const result = await this.vueloRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`Vuelo con ID "${id}" no encontrado`);
-    }
-    return { message: `Vuelo con ID "${id}" ha sido eliminado.` };
+    const vuelo = await this.findOne(id);
+
+    vuelo.borrado = true;
+    await this.vueloRepository.save(vuelo);
+
+    return { message: `Vuelo con ID "${id}" ha sido marcado como eliminado.` };
   }
 }

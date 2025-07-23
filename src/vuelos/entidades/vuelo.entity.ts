@@ -19,6 +19,9 @@ export class Vuelo {
   @Column('text')
   nombre: string;
 
+  @Column({ type: 'boolean', default: false })
+  borrado: boolean;
+
   @OneToMany(() => Imagen, (imagen) => imagen.vuelo, {
     cascade: true,
     eager: true,

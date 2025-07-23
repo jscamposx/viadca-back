@@ -14,6 +14,7 @@ import { generarExcelDePaquete } from '../utils/plantilla-excel';
 import { HotelesService } from '../hoteles/hoteles.service';
 import { Itinerario } from './entidades/itinerario.entity';
 import { ImagenService } from '../imagen/imagen.service';
+import { Hotel } from '../hoteles/entidades/hotel.entity';
 
 @Injectable()
 export class PaquetesService {
@@ -24,6 +25,8 @@ export class PaquetesService {
     private readonly vueloRepository: Repository<Vuelo>,
     @InjectRepository(Itinerario)
     private readonly itinerarioRepository: Repository<Itinerario>,
+    @InjectRepository(Hotel)
+    private readonly hotelRepository: Repository<Hotel>,
     private readonly hotelesService: HotelesService,
     private readonly imagenService: ImagenService,
     private readonly dataSource: DataSource,
@@ -62,7 +65,7 @@ export class PaquetesService {
 
       if (id_vuelo) {
         const vuelo = await this.vueloRepository.findOne({
-          where: { id: id_vuelo },
+          where: { id: id_vuelo, borrado: false },
         });
         if (!vuelo)
           throw new NotFoundException(
@@ -130,7 +133,7 @@ export class PaquetesService {
 
       if (id_vuelo) {
         const vuelo = await this.vueloRepository.findOne({
-          where: { id: id_vuelo },
+          where: { id: id_vuelo, borrado: false },
         });
         if (!vuelo)
           throw new NotFoundException(
@@ -226,10 +229,39 @@ export class PaquetesService {
 
   async remove(id: string): Promise<{ message: string }> {
     const paquete = await this.findOneById(id);
+
     paquete.borrado = true;
+
+    if (paquete.imagenes) {
+      for (const imagen of paquete.imagenes) {
+        imagen.borrado = true;
+      }
+    }
+
+    if (paquete.hotel) {
+      paquete.hotel.borrado = true;
+
+      if (paquete.hotel.imagenes) {
+        for (const imagen of paquete.hotel.imagenes) {
+          imagen.borrado = true;
+        }
+      }
+    }
+
+    if (paquete.vuelo) {
+      paquete.vuelo.borrado = true;
+
+      if (paquete.vuelo.imagenes) {
+        for (const imagen of paquete.vuelo.imagenes) {
+          imagen.borrado = true;
+        }
+      }
+    }
+
     await this.paqueteRepository.save(paquete);
+
     return {
-      message: `Paquete con ID "${id}" ha sido marcado como eliminado.`,
+      message: `Paquete con ID "${id}" y sus elementos asociados han sido marcados como eliminados.`,
     };
   }
 

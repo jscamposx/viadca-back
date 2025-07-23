@@ -54,7 +54,7 @@ export class ImagenService {
 
     if (paqueteId) {
       const paquete = await this.paqueteRepository.findOne({
-        where: { id: paqueteId },
+        where: { id: paqueteId, borrado: false },
       });
       if (!paquete) {
         throw new NotFoundException(
@@ -66,7 +66,7 @@ export class ImagenService {
 
     if (hotelId) {
       const hotel = await this.hotelRepository.findOne({
-        where: { id: hotelId },
+        where: { id: hotelId, borrado: false },
       });
       if (!hotel) {
         throw new NotFoundException(`Hotel con ID "${hotelId}" no encontrado`);
@@ -76,7 +76,7 @@ export class ImagenService {
 
     if (vueloId) {
       const vuelo = await this.vueloRepository.findOne({
-        where: { id: vueloId },
+        where: { id: vueloId, borrado: false },
       });
       if (!vuelo) {
         throw new NotFoundException(`Vuelo con ID "${vueloId}" no encontrado`);
@@ -89,16 +89,28 @@ export class ImagenService {
 
   findAll(): Promise<Imagen[]> {
     return this.imagenRepository.find({
+      where: { borrado: false },
       relations: ['paquete', 'hotel', 'vuelo'],
     });
   }
 
-  async remove(id: string): Promise<{ message: string }> {
-    const result = await this.imagenRepository.delete(id);
-    if (result.affected === 0) {
+  async findOne(id: string): Promise<Imagen> {
+    const imagen = await this.imagenRepository.findOne({
+      where: { id, borrado: false },
+    });
+    if (!imagen) {
       throw new NotFoundException(`Imagen con ID "${id}" no encontrada`);
     }
-    return { message: `Imagen con ID "${id}" ha sido eliminada.` };
+    return imagen;
+  }
+
+  async remove(id: string): Promise<{ message: string }> {
+    const imagen = await this.findOne(id);
+
+    imagen.borrado = true;
+    await this.imagenRepository.save(imagen);
+
+    return { message: `Imagen con ID "${id}" ha sido marcada como eliminada.` };
   }
 
   async procesarIdentificadoresDeImagen(
@@ -115,12 +127,15 @@ export class ImagenService {
     if (uuids.length > 0) {
       const imagenesExistentes = await this.imagenRepository.findBy({
         id: In(uuids),
+        borrado: false,
       });
       imagenesFinales.push(...imagenesExistentes);
     }
 
     for (const url of urlsExternas) {
-      let imagen = await this.imagenRepository.findOne({ where: { url } });
+      let imagen = await this.imagenRepository.findOne({
+        where: { url, borrado: false },
+      });
       if (!imagen) {
         imagen = this.imagenRepository.create({ url, es_externa: true });
       }
