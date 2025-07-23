@@ -29,7 +29,7 @@ export class Paquete {
   @Column('varchar', { length: 255, unique: true })
   url: string;
 
-  @ManyToOne(() => Vuelo, { eager: true, nullable: true })
+  @ManyToOne(() => Vuelo, { eager: true, nullable: true,  onDelete: 'SET NULL',})
   @JoinColumn({ name: 'id_vuelo' })
   vuelo?: Vuelo;
 

@@ -23,45 +23,63 @@ export class PapeleraService {
     const paquetes = await this.paqueteRepository.find({
       where: { borrado: true },
     });
-    const hoteles = await this.hotelRepository.find({
+
+    const vuelos = await this.vueloRepository.find({
       where: { borrado: true },
     });
-    const vuelos = await this.vueloRepository.find({ where: { borrado: true } });
 
     return {
       paquetes,
-      hoteles,
+      hoteles: [],
       vuelos,
     };
   }
 
   async restore(id: string, tipo: string) {
-    let repository: Repository<any>;
     switch (tipo) {
-      case 'paquete':
-        repository = this.paqueteRepository;
-        break;
-      case 'hotel':
-        repository = this.hotelRepository;
-        break;
-      case 'vuelo':
-        repository = this.vueloRepository;
-        break;
+      case 'paquete': {
+        const paquete = await this.paqueteRepository.findOne({
+          where: { id, borrado: true },
+          relations: ['hotel', 'vuelo'],
+        });
+
+        if (!paquete) {
+          throw new NotFoundException(
+            `Paquete con ID "${id}" no encontrado en la papelera.`,
+          );
+        }
+
+        paquete.borrado = false;
+        if (paquete.hotel) {
+          paquete.hotel.borrado = false;
+        }
+        if (paquete.vuelo) {
+          paquete.vuelo.borrado = false;
+        }
+
+        await this.paqueteRepository.save(paquete);
+        return {
+          message: `Paquete con ID "${id}" y sus elementos asociados han sido restaurados.`,
+        };
+      }
+      case 'vuelo': {
+        const vuelo = await this.vueloRepository.findOne({
+          where: { id, borrado: true },
+        });
+
+        if (!vuelo) {
+          throw new NotFoundException(
+            `Vuelo con ID "${id}" no encontrado en la papelera.`,
+          );
+        }
+
+        vuelo.borrado = false;
+        await this.vueloRepository.save(vuelo);
+        return { message: `Vuelo con ID "${id}" ha sido restaurado.` };
+      }
       default:
         throw new NotFoundException(`Tipo de entidad "${tipo}" no válido.`);
     }
-
-    const item = await repository.findOne({ where: { id, borrado: true } });
-
-    if (!item) {
-      throw new NotFoundException(
-        `${tipo} con ID "${id}" no encontrado en la papelera.`,
-      );
-    }
-
-    item.borrado = false;
-    await repository.save(item);
-    return { message: `${tipo} con ID "${id}" ha sido restaurado.` };
   }
 
   async remove(id: string, tipo: string) {
@@ -71,10 +89,6 @@ export class PapeleraService {
       case 'paquete':
         repository = this.paqueteRepository;
         relations = ['imagenes', 'hotel.imagenes', 'vuelo.imagenes'];
-        break;
-      case 'hotel':
-        repository = this.hotelRepository;
-        relations = ['imagenes'];
         break;
       case 'vuelo':
         repository = this.vueloRepository;

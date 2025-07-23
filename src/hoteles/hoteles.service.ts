@@ -62,13 +62,4 @@ export class HotelesService {
 
     return this.hotelRepository.save(hotel);
   }
-
-  async remove(id: string): Promise<{ message: string }> {
-    const hotel = await this.findOne(id);
-
-    hotel.borrado = true;
-    await this.hotelRepository.save(hotel);
-
-    return { message: `Hotel con ID "${id}" ha sido marcado como eliminado.` };
-  }
 }

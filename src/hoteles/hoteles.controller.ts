@@ -38,9 +38,4 @@ export class HotelesController {
   ) {
     return this.hotelesService.update(id, updateHotelDto);
   }
-
-  @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.hotelesService.remove(id);
-  }
 }
