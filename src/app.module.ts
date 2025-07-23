@@ -6,7 +6,7 @@ import { ImagenModule } from './imagen/imagen.module';
 import { VuelosModule } from './vuelos/vuelos.module';
 import { HotelesModule } from './hoteles/hoteles.module';
 import databaseConfig from './config/database.config';
-
+import { PapeleraModule } from './papelera/papelera.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,6 +25,7 @@ import databaseConfig from './config/database.config';
     ImagenModule,
     VuelosModule,
     HotelesModule,
+    PapeleraModule,
   ],
 })
 export class AppModule {}
