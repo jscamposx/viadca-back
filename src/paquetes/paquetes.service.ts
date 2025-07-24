@@ -248,15 +248,7 @@ export class PaquetesService {
       }
     }
 
-    if (paquete.vuelo) {
-      paquete.vuelo.borrado = true;
-
-      if (paquete.vuelo.imagenes) {
-        for (const imagen of paquete.vuelo.imagenes) {
-          imagen.borrado = true;
-        }
-      }
-    }
+    // El bloque que borraba lógicamente el vuelo ha sido eliminado
 
     await this.paqueteRepository.save(paquete);
 

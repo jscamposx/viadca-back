@@ -90,6 +90,7 @@ export class Paquete {
   @OneToOne(() => Hotel, (hotel) => hotel.paquete, {
     cascade: true,
     eager: true,
+    onDelete: 'SET NULL',
   })
   @JoinColumn()
   hotel: Hotel;

@@ -16,11 +16,17 @@ export class PapeleraService {
     private readonly hotelRepository: Repository<Hotel>,
     @InjectRepository(Vuelo)
     private readonly vueloRepository: Repository<Vuelo>,
+    @InjectRepository(Imagen) // Repositorio de Imagen inyectado
+    private readonly imagenRepository: Repository<Imagen>,
     private readonly imageHandlerService: ImageHandlerService,
   ) {}
 
   async findAll() {
     const paquetes = await this.paqueteRepository.find({
+      where: { borrado: true },
+    });
+
+    const hoteles = await this.hotelRepository.find({ // Ahora también busca hoteles
       where: { borrado: true },
     });
 
@@ -30,7 +36,7 @@ export class PapeleraService {
 
     return {
       paquetes,
-      hoteles: [],
+      hoteles,
       vuelos,
     };
   }
@@ -52,15 +58,28 @@ export class PapeleraService {
         paquete.borrado = false;
         if (paquete.hotel) {
           paquete.hotel.borrado = false;
+          await this.hotelRepository.save(paquete.hotel);
         }
         if (paquete.vuelo) {
           paquete.vuelo.borrado = false;
+          await this.vueloRepository.save(paquete.vuelo);
         }
 
         await this.paqueteRepository.save(paquete);
         return {
           message: `Paquete con ID "${id}" y sus elementos asociados han sido restaurados.`,
         };
+      }
+      case 'hotel': { // Nueva lógica para restaurar hoteles
+        const hotel = await this.hotelRepository.findOne({
+            where: { id, borrado: true },
+        });
+        if (!hotel) {
+            throw new NotFoundException(`Hotel con ID "${id}" no encontrado en la papelera.`);
+        }
+        hotel.borrado = false;
+        await this.hotelRepository.save(hotel);
+        return { message: `Hotel con ID "${id}" ha sido restaurado.` };
       }
       case 'vuelo': {
         const vuelo = await this.vueloRepository.findOne({
@@ -88,7 +107,11 @@ export class PapeleraService {
     switch (tipo) {
       case 'paquete':
         repository = this.paqueteRepository;
-        relations = ['imagenes', 'hotel.imagenes', 'vuelo.imagenes'];
+        relations = ['imagenes', 'hotel', 'hotel.imagenes', 'vuelo.imagenes']; // Se carga la relación 'hotel' completa
+        break;
+      case 'hotel': // Nueva lógica para eliminar hoteles
+        repository = this.hotelRepository;
+        relations = ['imagenes'];
         break;
       case 'vuelo':
         repository = this.vueloRepository;
@@ -105,6 +128,7 @@ export class PapeleraService {
       if (item.imagenes) {
         imagenesABorrar.push(...item.imagenes);
       }
+      // Se asegura de incluir las imágenes del hotel cuando el tipo es 'paquete'
       if (tipo === 'paquete' && item.hotel && item.hotel.imagenes) {
         imagenesABorrar.push(...item.hotel.imagenes);
       }
@@ -112,10 +136,17 @@ export class PapeleraService {
         imagenesABorrar.push(...item.vuelo.imagenes);
       }
 
+      // Elimina los archivos de imagen y luego los registros de la BD
       for (const imagen of imagenesABorrar) {
         if (!imagen.es_externa) {
           await this.imageHandlerService.deleteImageFile(imagen.url);
         }
+        await this.imagenRepository.remove(imagen);
+      }
+
+      // Si es un paquete y tiene un hotel, se elimina el hotel
+      if (tipo === 'paquete' && item.hotel) {
+        await this.hotelRepository.remove(item.hotel);
       }
     }
 
